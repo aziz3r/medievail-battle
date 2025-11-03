@@ -1,0 +1,40 @@
+battle/
+│
+├── core/
+│   ├── entities.py        # unités, stats, armures
+│   ├── stats.py           # formules de dégâts AoE, élévation
+│   ├── registry.py        # toutes les troupes (Knight, Pikeman, etc.)
+│   ├── engine.py          # boucle du jeu (ticks, collisions, morts)
+│   ├── map.py             # carte (dimensions, obstacles)
+│   ├── team.py            # gestion des équipes
+│   ├── pathfinding.py     # A* (si tu veux du déplacement réaliste)
+│   ├── projectiles.py     # flèches, pierres...
+│   └── config.py          # constantes globales (Δt, gravité, etc.)
+│
+├── ai/
+│   ├── braindead.py       # IA bête
+│   ├── daft.py            # IA un peu plus logique
+│   ├── advanced.py        # IA plus tactique (bonus/counter)
+│   └── decision_tree.py   # optionnel : système de décisions
+│
+├── scenarios/
+│   ├── mirror_line.py     # scénario test (5v5 face à face)
+│   ├── lanchester.py      # scénario Lanchester pour stats
+│   └── ... (autres si besoin)
+│
+├── tourney/
+│   ├── runner.py          # lance tous les combats IA vs IA
+│   ├── reports.py         # matrices, export HTML/PDF
+│   └── plots.py           # courbes matplotlib
+│
+├── views/
+│   ├── terminal.py        # affichage texte (v1)
+│   └── iso2d/
+│       └── renderer.py    # rendu graphique (v2)
+│
+├── assets/                # sprites et sons
+├── saves/                 # sauvegardes de parties
+├── tests/                 # tests unitaires
+│   ├── test_engine.py
+│   └── test_ai.py
+└── cli.py                 # point d’entrée (battle run / tourney / plot)
