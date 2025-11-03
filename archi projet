@@ -1,0 +1,29 @@
+AIge-Of-EmpAIres/
+├── 📁 Controller/           # Game logic and AI controllers
+│   ├── Bot.py              # Main AI bot implementation
+│   ├── Decisonnode.py      # Decision tree system
+│   ├── game_loop.py        # Main game loop
+│   ├── event_handler.py    # Input handling
+│   ├── drawing.py          # Rendering system
+│   └── ...
+├── 📁 Entity/              # Game entities
+│   ├── 📁 Building/        # Building classes
+│   ├── 📁 Unit/           # Unit classes
+│   ├── 📁 Resource/       # Resource entities
+│   └── Entity.py          # Base entity class
+├── 📁 Models/              # Game models and data structures
+│   ├── Map.py             # Game map implementation
+│   ├── Team.py            # Team/player management
+│   ├── Resources.py       # Resource management
+│   └── Zone.py            # Zone control system
+├── 📁 Settings/            # Configuration and setup
+│   ├── setup.py           # Game constants and settings
+│   ├── entity_mapping.py  # Entity type mappings
+│   └── sync.py            # Synchronization settings
+├── 📁 AiUtils/             # AI utilities
+│   └── aStar.py           # A* pathfinding algorithm
+├── 📁 Projectile/          # Projectile system
+├── 📁 assets/              # Game assets (sprites, sounds)
+├── 📁 saves/               # Save game files
+├── main.py                # Main entry point
+└── test_bot_logic.py      # Bot testing utilities
