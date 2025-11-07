@@ -4,8 +4,8 @@ import sys
 
 
 from Models.Map.Map import GameMap
-# Import Unit from Entity/Unit/unit_base.py (adjust if your file name is different)
-from Entity.Unit.unit_base import Unit
+# CORRECTION 1 : L'import doit pointer vers Guerrier dans guerrier.py (tel que défini dans notre architecture).
+from Entity.Unit.guerrier import Guerrier
 
 # --- 2. VIEW CONFIGURATION ---
 VIEW_WIDTH = 80
@@ -49,12 +49,14 @@ class TerminalView:
         else:
             return f"{color}#{RESET}" # Elevation
 
-    def draw_map(self, units: list[Unit], tick=0):
+    # CORRECTION 2 : Changement du typage pour 'Guerrier' (lisibilité).
+    def draw_map(self, units: list[Guerrier], tick=0):
         """Draws the visible map section and overlays units."""
         self._clear_screen()
 
         unit_positions = {}
         for unit in units:
+            # Cette ligne Nécessite la méthode get_grid_coords() dans Guerrier.py
             unit_i, unit_j = unit.get_grid_coords()
             view_i = unit_i - self.view_y
             view_j = unit_j - self.view_x
@@ -70,7 +72,10 @@ class TerminalView:
                 if (i, j) in unit_positions:
                     # Draw Unit
                     unit = unit_positions[(i, j)]
-                    symbol = unit.unit_type[0].upper()
+
+                    # CORRECTION 3 : unit.unit_type n'existe pas. On utilise le nom de la classe (ex: Knight -> K).
+                    symbol = type(unit).__name__[0].upper()
+
                     color = COLOR_PLAYER_1 if unit.player_id == 1 else COLOR_PLAYER_2
                     line.append(f"{color}{symbol}{RESET}")
 
@@ -85,7 +90,7 @@ class TerminalView:
                     else:
                         line.append(' ') # Space outside map bounds
 
-            output_lines.append("".join(line))
+                output_lines.append("".join(line))
 
         # Display everything
         print(f"--- AIge of EmpAIres: Terminal View (Tick: {tick}) ---")
