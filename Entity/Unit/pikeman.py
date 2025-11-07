@@ -1,54 +1,83 @@
+# pikeman.py
 from guerrier import Guerrier
-from knight import Knight 
+from knight import Knight  # pour le bonus cavalerie
 
 class Pikeman(Guerrier):
-    def __init__(self):
-        super().__init__(hp=55, attaque=4, armor=0, pierceArmor=0, range=0, lineOfSight=4, speed=1, buildTime=22, reloadTime=3, equipe = None,
-                    shockInfantry=1, standardBuildings=1, elephants=25, baseMelee=4, mountedUnits=22, ships=16, camels=18,
-                    mamelukes=7, fishingShips=16, allArchers=0, 
-                    spearUnits=0, infantry=0, baseMeleeDefense=0, basePierce=0, obsoleteDefense=0, cooldown=0)
-        
+	def __init__(self):
+		super().__init__(
+			hp=55, attaque=4, armor=0, pierceArmor=0, range=0, lineOfSight=4, speed=1,
+			buildTime=22, reloadTime=3,
+			shockInfantry=1, standardBuildings=1, elephants=25, baseMelee=4, mountedUnits=22, ships=16,
+			camels=18, mamelukes=7, fishingShips=16, allArchers=0,
+			spearUnits=0, infantry=0, baseMeleeDefense=0, basePierce=0, obsoleteDefense=0,
+			cooldown=0
+		)
 
-    def se_deplacer(self):
-        print("The pikeman moves")
+	# ---------- Portée de mêlée ----------
+	def _melee_reach(self) -> float:
+		"""AoE affiche range=0 en mêlée : on autorise un contact ~1.0."""
+		return 1.0 if (self.range is None or self.range == 0) else float(self.range)
 
-    
-    def attaquer(self, target, distance, k_elev=1.0):
-        
-        #check if the target is within firing range
-        if distance > self.range:
-            print("The target is too far! ")
-            return 0
-        
-        
-       # Base damage calculation (melee attack - target's melee armor)
-        damage = self.baseMelee - target.armor
-        
-       # Attack bonus depending on target type
-        bonus = 0
-        
-        # Bonus against the Knights (mounted cavalry)
-        if isinstance(target, Knight):
-            bonus = self.mountedUnits  # +22 damage
-            damage += bonus
-            print(f"Bonus damage against mounted units: +{bonus}")
-        
-    
-        
-        allDamage = max(1, k_elev * damage)
-        
-        # Inflict damage
-        target.hp -= allDamage
-        
-        
-        # Check if the target is destroyed
-        if target.hp <= 0:
-            print(f"The {target.__class__.__name__} is destroyed!")
-            target.hp = 0
-        else:
-            print(f"{target.__class__.__name__} has {target.hp:.1f} HP remaining")
-        
-        return allDamage
+	# ---------- Gestion du temps ----------
+	def tick(self, dt: float):
+		"""Fait passer le temps pour pouvoir refrapper (à appeler dans la boucle de jeu)."""
+		self.cooldown = max(0.0, (self.cooldown or 0.0) - float(dt))
 
-    def calculer_degats(self, cible):
-        """calcul des dégats pour Pikeman"""
+	# ---------- Calcul des dégâts ----------
+	def calculer_degats(self, cible, k_elev: float = 1.0) -> float:
+		"""Calcul des dégâts d'un coup (utile si tu veux l'appeler ailleurs)."""
+		damage = float(self.baseMelee if self.baseMelee is not None else self.attaque) - float(getattr(cible, "armor", 0))
+		bonus = 0.0
+
+		if isinstance(cible, Knight):
+			bonus += float(self.mountedUnits or 0)
+
+		name = cible.__class__.__name__.lower()
+		if "camel" in name:
+			bonus += float(self.camels or 0)
+		if "elephant" in name:
+			bonus += float(self.elephants or 0)
+
+		damage += bonus
+		damage = max(1.0, float(k_elev) * damage)
+		return round(damage, 2)
+
+	# ---------- Déplacement ----------
+	def se_deplacer(self):
+		print("The pikeman moves")
+
+	# ---------- Attaque principale ----------
+	def attaquer(self, target, distance, k_elev=1.0):
+		# Vérifie la portée (utilise la portée de mêlée)
+		if distance > self._melee_reach():
+			print("The target is too far!")
+			return 0
+
+		# Vérifie le cooldown
+		if self.cooldown > 0:
+			print("The pikeman must reload!")
+			return 0
+
+		# Vérifie si la cible est déjà morte
+		if target.hp <= 0:
+			print("The target is already dead!")
+			return 0
+
+		# Calcule les dégâts avec la fonction dédiée
+		allDamage = self.calculer_degats(target, k_elev)
+
+		# Applique les dégâts à la cible
+		target.hp -= allDamage
+
+		# Démarre le cooldown
+		self.cooldown = self.reloadTime
+
+		# Vérifie si la cible est détruite
+		if target.hp <= 0:
+			print(f"The {target.__class__.__name__} is destroyed!")
+			target.hp = 0
+		else:
+			print(f"{target.__class__.__name__} has {target.hp:.1f} HP remaining")
+
+		# Retourne les dégâts infligés
+		return allDamage
