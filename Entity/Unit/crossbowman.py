@@ -18,22 +18,30 @@ class Crossbowman(Guerrier):
     def attaquer(self, target,distance,k_elev=1.0):
         precision= random.randint(1, 100)
 
+        #check if the target is within firing range
         if distance > self.range:
             print ("The target is too far!")
             return 0
-        
+        #checks if the crossbowman hits his target
         if precision > self.accuracy:
             print ("The Crossbowman misses the target!")
             return 0
         
-        degats = self.basePierceAttack - target.pierceArmor
+        # Damage calculation (base pierce attack - target's pierce armor)
+        damage = self.basePierceAttack - target.pierceArmor
 
-        if isinstance(target, Pikeman):  
-            degats += self.spearUnits
+        # Attack bonus depending on target type
+        bonus = 0
 
-        allDamage = max(1, k_elev * degats)
+        # Bonus against the Pikeman 
+        if isinstance(target, Pikeman): 
+            bonus=self.spearUnits 
+            damage += bonus
+            print(f"Bonus damage against pike units: +{bonus}")
+
+        allDamage = max(1, k_elev * damage)
         
-        
+        # Inflict damage
         target.hp -= allDamage
                 
         if target.hp <= 0:
@@ -41,5 +49,4 @@ class Crossbowman(Guerrier):
             target.hp = 0
         
         return allDamage
-    def attaquer(self):
-        print("The crossbowman attacks")
+    

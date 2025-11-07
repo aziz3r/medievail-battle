@@ -22,7 +22,7 @@ class Pikeman(Guerrier):
         
         
        # Base damage calculation (melee attack - target's melee armor)
-        degats = self.baseMelee - target.armor
+        damage = self.baseMelee - target.armor
         
        # Attack bonus depending on target type
         bonus = 0
@@ -30,12 +30,12 @@ class Pikeman(Guerrier):
         # Bonus against the Knights (mounted cavalry)
         if isinstance(target, Knight):
             bonus = self.mountedUnits  # +22 damage
-            degats += bonus
+            damage += bonus
             print(f"Bonus damage against mounted units: +{bonus}")
         
     
         
-        allDamage = max(1, k_elev * degats)
+        allDamage = max(1, k_elev * damage)
         
         # Inflict damage
         target.hp -= allDamage
