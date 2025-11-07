@@ -6,7 +6,7 @@ class Crossbowman(Guerrier):
                         reloadTime=2, frameDelay=15, attackDelay=0.35, accuracy=85,
                         spearUnits=3, basePierceAttack=5, standardBuildings=0, stoneDefenseHarbors=0, 
                         highPierceArmorSiegeUnits=0,
-                        allArchers=0, baseMeleeDefense=0, basePierce=0, obsoleteDefense=0)
+                        allArchers=0, baseMeleeDefense=0, basePierce=0, obsoleteDefense=0, cooldown=0)
         
 
     def se_deplacer(self):
