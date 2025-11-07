@@ -1,4 +1,7 @@
 from guerrier import Guerrier
+from pikeman import Pikeman 
+import random
+
 
 class Crossbowman(Guerrier):
     def __init__(self):
@@ -12,5 +15,29 @@ class Crossbowman(Guerrier):
     def se_deplacer(self):
         print("The crossbowman moves")
 
-    def attaquer(self):
-        print("The crossbowman attacks")
+    def attaquer(self, target,distance,k_elev=1.0):
+        precision= random.randint(1, 100)
+
+        if distance > self.range:
+            print ("The target is too far!")
+            return 0
+        
+        if precision > self.accuracy:
+            print ("The Crossbowman misses the target!")
+            return 0
+        
+        degats = self.basePierceAttack - target.pierceArmor
+
+        if isinstance(target, Pikeman):  
+            degats += self.spearUnits
+
+        allDamage = max(1, k_elev * degats)
+        
+        
+        target.hp -= allDamage
+                
+        if target.hp <= 0:
+            print(f"The {target.__class__.__name__} is destroyed!")
+            target.hp = 0
+        
+        return allDamage
