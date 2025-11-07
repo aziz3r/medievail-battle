@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
+import string
+import math
+import time
 
 class Guerrier(ABC):
     def __init__(self, hp: float = None, attaque: float = None, armor: float = None, pierceArmor: float = None,
                  range: float = None, lineOfSight: float = None, speed: float = None, buildTime: float = None,
                  reloadTime: float = None, shockInfantry: float = None, frameDelay: float = None, attackDelay: float = None,
-                accuracy: float = None,   standardBuildings: float = None,
+                accuracy: float = None, cooldown: float =None, equipe: string = None,  standardBuildings: float = None,
                  elephants: float = None, baseMelee: float = None, mountedUnits: float = None, ships: float = None,
                  camels: float = None, mamelukes: float = None, fishingShips: float = None, allArchers: float = None,
                  allBuildings: float = None, cavalryResistance: float = None, siegeUnits: float = None, skirmishers: float = None,
@@ -12,7 +15,7 @@ class Guerrier(ABC):
                  obsolete: float = None,
                  spearUnits: float = None, infantry: float = None,baseMeleeDefense: float = None, 
                  basePierce: float = None, obsoleteDefense: float = None,
-                 mountedUnitsDefense: float = None, cooldown: float =None):
+                 mountedUnitsDefense: float = None, ):
         self.hp = hp
         self.attaque = attaque
         self.armor = armor
@@ -26,6 +29,7 @@ class Guerrier(ABC):
         self.attackDelay = attackDelay          ## en secondes
         self.accuracy = accuracy                ## en %
         self.cooldown = cooldown                ## en secondes
+        self.equipe = equipe
         
         """Attaque"""
         self.shockInfantry = shockInfantry
