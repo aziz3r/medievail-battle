@@ -12,7 +12,7 @@ class Guerrier(ABC):
                  obsolete: float = None,
                  spearUnits: float = None, infantry: float = None,baseMeleeDefense: float = None, 
                  basePierce: float = None, obsoleteDefense: float = None,
-                 mountedUnitsDefense: float = None):
+                 mountedUnitsDefense: float = None, cooldown: float =None):
         self.hp = hp
         self.attaque = attaque
         self.armor = armor
@@ -25,6 +25,7 @@ class Guerrier(ABC):
         self.frameDelay = frameDelay
         self.attackDelay = attackDelay          ## en secondes
         self.accuracy = accuracy                ## en %
+        self.cooldown = cooldown                ## en secondes
         
         """Attaque"""
         self.shockInfantry = shockInfantry

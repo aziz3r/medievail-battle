@@ -16,27 +16,8 @@ class Knight(Guerrier):
                 
         
 
-    def se_deplacer(self, destination, dt):
-        if not self.isAlive:
-            return
-    
-        dx = destination[0] - self.position[0]
-        dy = destination[1] - self.position[1]
-        distance = math.sqrt(dx**2 + dy**2)
-        
-    
-        if distance < 0.1:
-            self.position = destination
-            self.destination = None
-        else:
-            step = self.speed * dt 
-            if step >= distance: 
-                self.position = destination
-                self.destination = None
-            else:
-                new_x = self.position[0] + (dx / distance) * step
-                new_y = self.position[1] + (dy / distance) * step
-                self.position = (new_x, new_y)
+    def se_deplacer(self):
+        print("Knight moves")
         
 
     def attaquer(self, target, currentTime):
