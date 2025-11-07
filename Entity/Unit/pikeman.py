@@ -15,20 +15,21 @@ class Pikeman(Guerrier):
     
     def attaquer(self, target, distance, k_elev=1.0):
         
+        #check if the target is within firing range
         if distance > self.range:
             print("The target is too far! ")
             return 0
         
         
-        # Calcul des dégâts de base (attaque corps à corps - armure corps à corps de la cible)
+       # Base damage calculation (melee attack - target's melee armor)
         degats = self.baseMelee - target.armor
         
-        # Bonus d'attaque selon le type de cible
+       # Attack bonus depending on target type
         bonus = 0
         
-        # Bonus contre les Knights (cavalerie montée)
+        # Bonus against the Knights (mounted cavalry)
         if isinstance(target, Knight):
-            bonus = self.mountedUnits  # +22 dégâts
+            bonus = self.mountedUnits  # +22 damage
             degats += bonus
             print(f"Bonus damage against mounted units: +{bonus}")
         
@@ -36,11 +37,11 @@ class Pikeman(Guerrier):
         
         allDamage = max(1, k_elev * degats)
         
-        # Infliger les dégâts
+        # Inflict damage
         target.hp -= allDamage
         
         
-        # Vérifier si la cible est détruite
+        # Check if the target is destroyed
         if target.hp <= 0:
             print(f"The {target.__class__.__name__} is destroyed!")
             target.hp = 0
@@ -48,5 +49,4 @@ class Pikeman(Guerrier):
             print(f"{target.__class__.__name__} has {target.hp:.1f} HP remaining")
         
         return allDamage
-    def attaquer(self):
-        print("The pikeman attacks")
+
