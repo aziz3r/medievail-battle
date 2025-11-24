@@ -19,6 +19,9 @@ from Entity.Unit.knight import Knight
 from Entity.Unit.pikeman import Pikeman
 from Entity.Unit.crossbowman import Crossbowman
 from Models.Map.Map import BattleMap   # Map.py -> classe BattleMap
+from Models.IA_Generales.captainBraindead import CapitainBraindead
+from Models.IA_Generales.general import General
+from Models.IA_Generales.majorDraft import MajorDaft
 
 
 # === 3) Création de la map et des unités ===
