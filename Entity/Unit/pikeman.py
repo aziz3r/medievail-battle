@@ -1,6 +1,6 @@
 # pikeman.py
-from guerrier import Guerrier
-from knight import Knight  # pour le bonus cavalerie
+from Entity.Unit.guerrier import Guerrier
+from Entity.Unit.knight import Knight   # pour le bonus cavalerie
 
 class Pikeman(Guerrier):
 	def __init__(self):
