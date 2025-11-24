@@ -1,4 +1,4 @@
-from guerrier import Guerrier
+from Entity.Unit.guerrier import Guerrier
 import math
 
 class Knight(Guerrier):
@@ -53,4 +53,7 @@ class Knight(Guerrier):
         damage = k_elev * damage
         damage = max(1, damage) #It must have at least one damage
         return damage
+
+    def calculer_degats(self, target):
+        return self._calculate_damage(target)
     
