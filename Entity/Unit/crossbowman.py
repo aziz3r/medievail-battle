@@ -1,5 +1,5 @@
-from guerrier import Guerrier
-from pikeman import Pikeman 
+from Entity.Unit.guerrier import Guerrier
+from Entity.Unit.pikeman import Pikeman
 import random
 
 
