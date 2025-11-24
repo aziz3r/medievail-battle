@@ -1,52 +1,81 @@
-import random
+# Models/Map/Map.py
 
-MAP_N = 120           # Required minimum height (rows)
-MAP_M = 120           # Required minimum width (columns)
-MAX_ELEVATION = 16    # Max elevation level for damage modifiers
+class BattleMap:
+    """
+    Map très simple :
+    - une grille rows x cols
+    - chaque case contient une liste d'unités [ [team, unit], ... ]
+    """
 
-# --- GAME MAP CLASS ---
+    def __init__(self, rows: int = 5, cols: int = 5):
+        self.rows = rows
+        self.cols = cols
+        # grid[i][j] = liste d'unités dans la case (i, j)
+        self.grid = [[[] for _ in range(cols)] for _ in range(rows)]
 
-class GameMap:
+    def in_bounds(self, row: int, col: int) -> bool:
+        return 0 <= row < self.rows and 0 <= col < self.cols
 
-    def __init__(self, N=MAP_N, M=MAP_M):
-        self.N = N
-        self.M = M
-        self.tiles = self._generate_terrain()
+    def add_unit(self, row: int, col: int, team: str, unit) -> None:
+        """
+        Ajoute une unité sur la case (row, col)
+        team = 'r' (rouge), 'b' (bleu), etc.
+        unit = objet Knight / Pikeman / Crossbowman...
+        """
+        if not self.in_bounds(row, col):
+            raise ValueError(f"Case ({row}, {col}) hors de la map")
+        self.grid[row][col].append([team, unit])
 
-    def _generate_terrain(self):
+    def get_units(self, row: int, col: int):
+        if not self.in_bounds(row, col):
+            return []
+        return self.grid[row][col]
 
-        tiles = []
-        for i in range(self.N):
-            row = []
-            for j in range(self.M):
-                elevation = random.randint(0, 5)
-                tile_properties = {
-                    'elevation': elevation,
-                    'is_impassable': False,
-                }
-                row.append(tile_properties)
-            tiles.append(row)
-        return tiles
+    def to_matrix(self):
+        """Retourne la matrice brute (pour l'utiliser dans Simulation)."""
+        return self.grid
 
-    def get_elevation(self, i: int, j: int) -> int:
+    def _symbol_for_cell(self, cell):
+        """
+        Pour l'affichage :
+        - vide -> "."
+        - chevalier rouge -> "Kr"
+        - chevalier bleu -> "Kb"
+        - etc.
+        """
+        if not cell:
+            return " . "
 
-        if 0 <= i < self.N and 0 <= j < self.M:
-            return self.tiles[i][j]['elevation']
-        # Default elevation if outside map bounds
-        return 0
+        # On ne regarde que la première unité de la case pour l'affichage
+        team, unit = cell[0]
 
-    def get_elevation_at_position(self, x: float, y: float) -> int:
+        # Récupère le type d'unité pour choisir une lettre
+        unit_name = type(unit).__name__.lower()
 
-        i = int(y)
-        j = int(x)
+        if "knight" in unit_name:
+            letter = "K"
+        elif "pikeman" in unit_name:
+            letter = "P"
+        elif "crossbowman" in unit_name:
+            letter = "C"
+        else:
+            letter = "U"  # Unit
 
-        return self.get_elevation(i, j)
+        # Couleur d'équipe
+        if team == "r":
+            suffix = "r"
+        elif team == "b":
+            suffix = "b"
+        else:
+            suffix = "?"
 
-# --- QUICK TEST EXAMPLE ---
-if __name__ == "__main__":
-    test_map = GameMap(N=20, M=20)
+        return f"{letter}{suffix}"
 
-    # Check elevation at a specific continuous position
-    x_pos, y_pos = 12.8, 14.1
-    elev = test_map.get_elevation_at_position(x_pos, y_pos)
-    print(f"Elevation at ({x_pos}, {y_pos}): {elev}")
+    def print_ascii(self):
+        """Affiche la map dans le terminal."""
+        for i in range(self.rows):
+            row_str = ""
+            for j in range(self.cols):
+                row_str += self._symbol_for_cell(self.grid[i][j]) + " "
+            print(row_str)
+        print()  # ligne vide à la fin
