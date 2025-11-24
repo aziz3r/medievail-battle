@@ -50,6 +50,6 @@ class Crossbowman(Guerrier):
         
         return allDamage
     
-    def calculer_degats(self, cible):
+    def _calculate_damage(self, cible):
         """calcul des dégats pour Crossbowman"""
     

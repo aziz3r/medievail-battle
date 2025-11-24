@@ -10,7 +10,7 @@ print(f"chevalier1 HP : {chevalier1.hp}")
 print(f"archer1 HP : {archer1.hp}")
 print(f"pikeman1 HP : {pikeman1.hp}")
 
-###### Création des différentes unités (avec un nombre donné et une équipe)
+###### Creation of different units (with a given number and a team)
 
 def creationCrossbowmans (nb, equipe_choix):
     n = nb

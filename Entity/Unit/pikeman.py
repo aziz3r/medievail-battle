@@ -13,18 +13,18 @@ class Pikeman(Guerrier):
 			cooldown=0
 		)
 
-	# ---------- Portée de mêlée ----------
+	# ---------- Scrum range ----------
 	def _melee_reach(self) -> float:
 		"""AoE affiche range=0 en mêlée : on autorise un contact ~1.0."""
 		return 1.0 if (self.range is None or self.range == 0) else float(self.range)
 
-	# ---------- Gestion du temps ----------
+	# ---------- Time management ----------
 	def tick(self, dt: float):
 		"""Fait passer le temps pour pouvoir refrapper (à appeler dans la boucle de jeu)."""
 		self.cooldown = max(0.0, (self.cooldown or 0.0) - float(dt))
 
-	# ---------- Calcul des dégâts ----------
-	def calculer_degats(self, cible, k_elev: float = 1.0) -> float:
+	# ---------- Damage calculation ----------
+	def _calculate_damage(self, cible, k_elev: float = 1.0) -> float:
 		"""Calcul des dégâts d'un coup (utile si tu veux l'appeler ailleurs)."""
 		damage = float(self.baseMelee if self.baseMelee is not None else self.attaque) - float(getattr(cible, "armor", 0))
 		bonus = 0.0
@@ -42,42 +42,43 @@ class Pikeman(Guerrier):
 		damage = max(1.0, float(k_elev) * damage)
 		return round(damage, 2)
 
-	# ---------- Déplacement ----------
+	# ---------- Movement ----------
 	def se_deplacer(self):
 		print("The pikeman moves")
 
-	# ---------- Attaque principale ----------
+	# ---------- Main attack ----------
 	def attaquer(self, target, distance, k_elev=1.0):
-		# Vérifie la portée (utilise la portée de mêlée)
+		# Check range (uses melee reach)
 		if distance > self._melee_reach():
 			print("The target is too far!")
 			return 0
 
-		# Vérifie le cooldown
+		# Check cooldown
 		if self.cooldown > 0:
 			print("The pikeman must reload!")
 			return 0
 
-		# Vérifie si la cible est déjà morte
+		# Check if target is already dead
 		if target.hp <= 0:
 			print("The target is already dead!")
 			return 0
 
-		# Calcule les dégâts avec la fonction dédiée
-		allDamage = self.calculer_degats(target, k_elev)
+		# Calculate damage using the dedicated method
+		allDamage = self._calculate_damage(target, k_elev)
 
-		# Applique les dégâts à la cible
+		# Apply the damage to the target and announce the hit
+		print(f"Pikeman hits {target.__class__.__name__} for {allDamage:.2f} damage")
 		target.hp -= allDamage
 
-		# Démarre le cooldown
+		# Start the cooldown
 		self.cooldown = self.reloadTime
 
-		# Vérifie si la cible est détruite
+		# Check if the target is destroyed
 		if target.hp <= 0:
 			print(f"The {target.__class__.__name__} is destroyed!")
 			target.hp = 0
 		else:
 			print(f"{target.__class__.__name__} has {target.hp:.1f} HP remaining")
 
-		# Retourne les dégâts infligés
+		# Return the damage dealt
 		return allDamage
