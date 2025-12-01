@@ -56,7 +56,7 @@ class BattleMap:
         - etc.
         """
         if not cell:
-            return " . "
+            return " ."
 
         # On ne regarde que la première unité de la case pour l'affichage
         team, unit = cell[0]

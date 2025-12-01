@@ -2,14 +2,6 @@ from knight import Knight
 from pikeman import Pikeman
 from crossbowman import Crossbowman
 
-chevalier1 = Knight()
-archer1 = Crossbowman()
-pikeman1 = Pikeman()
-
-print(f"chevalier1 HP : {chevalier1.hp}")
-print(f"archer1 HP : {archer1.hp}")
-print(f"pikeman1 HP : {pikeman1.hp}")
-
 ###### Creation of different units (with a given number and a team)
 
 def creationCrossbowmans (nb, equipe_choix):
