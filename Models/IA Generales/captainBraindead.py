@@ -10,7 +10,7 @@ class CapitainBraindead(General):
             if cible1!=(-1,-1,-1): #si il y a un ennemie dans sa zone d attaque
                 ennemi = Map.to_matrix[cible1[0]][cible1[1]][cible1[2]][1]
                 team_ennemi = Map.to_matrix[cible1[0]][cible1[1]][cible1[2]][0]
-                ennemi.hp-=troupe[1].attaque(troupe[1],ennemi) # attaque l ennemie
+                ennemi.hp-=troupe[1]._calculate_damage(troupe[1], ennemi): # attaque l ennemie
                 troupe[1].cooldown+=troupe[1].reloadTime + troupe[1].attackDelay # ajoute du delay a la troupe avant sa prochaine action
                 print(f"{troupe} attaque {ennemi} en {cible1[0]} ,  {cible1[1]}")
                 if ennemi.hp <=0: # si l'ennemie est mort , le supprimer de la carte
