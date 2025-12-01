@@ -42,43 +42,5 @@ class Pikeman(Guerrier):
 		damage = max(1.0, float(k_elev) * damage)
 		return round(damage, 2)
 
-	# ---------- Movement ----------
-	def se_deplacer(self):
-		print("The pikeman moves")
-
-	# ---------- Main attack ----------
-	def attaquer(self, target, distance, k_elev=1.0):
-		# Check range (uses melee reach)
-		if distance > self._melee_reach():
-			print("The target is too far!")
-			return 0
-
-		# Check cooldown
-		if self.cooldown > 0:
-			print("The pikeman must reload!")
-			return 0
-
-		# Check if target is already dead
-		if target.hp <= 0:
-			print("The target is already dead!")
-			return 0
-
-		# Calculate damage using the dedicated method
-		allDamage = self._calculate_damage(target, k_elev)
-
-		# Apply the damage to the target and announce the hit
-		print(f"Pikeman hits {target.__class__.__name__} for {allDamage:.2f} damage")
-		target.hp -= allDamage
-
-		# Start the cooldown
-		self.cooldown = self.reloadTime
-
-		# Check if the target is destroyed
-		if target.hp <= 0:
-			print(f"The {target.__class__.__name__} is destroyed!")
-			target.hp = 0
-		else:
-			print(f"{target.__class__.__name__} has {target.hp:.1f} HP remaining")
-
-		# Return the damage dealt
-		return allDamage
+	
+	
