@@ -43,9 +43,8 @@ def direction(troupe,i,j,cible): #troupe en position i,j sur la map . Cherche le
     return objectif
  
 def marche(troupe,i,j,k,objectif,Map): #troupe en position i,j sur la map . Se deplace d'une case sur le meilleur chemin
-    troupe1=troupe
-    Map[i][j]=Map[i][j][:k]+Map[i][j][k+1:]
-    Map[objectif[0],objectif[1]].append(troupe1)
+    Map.remove_unit(Map,i,j,troupe[0],troupe[1])
+    Map.add_unit(Map,objectif[0],objectif[1],troupe[0],troupe[1])
     return Map
 
 ## Fonctions pour la Simulation ( compléxité très forte )
