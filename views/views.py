@@ -1,108 +1,154 @@
-# views/views.py
-import os
-import sys
+import pygame
 
+# --- CONSTANTES ---
+TILE_WIDTH = 64
+TILE_HEIGHT = 32
+SCREEN_W = 1024
+SCREEN_H = 768
 
-from Models.Map.Map import GameMap
-# CORRECTION 1 : L'import doit pointer vers Guerrier dans guerrier.py (tel que défini dans notre architecture).
-from Entity.Unit.guerrier import Guerrier
+# Couleurs des équipes (Cercles au sol)
+COLOR_TEAM_A = (0, 80, 255)   # Bleu (Nord/Gauche)
+COLOR_TEAM_B = (220, 20, 60)  # Rouge (Sud/Droite)
 
-# --- 2. VIEW CONFIGURATION ---
-VIEW_WIDTH = 80
-VIEW_HEIGHT = 20
-SCROLL_STEP = 5
+class GUI:
+    def __init__(self, game_instance):
+        self.game = game_instance
+        # Protection : on récupère la map même si le nom change
+        self.map = getattr(game_instance, 'map', None)
+        
+        self.camera_x = SCREEN_W // 2
+        self.camera_y = 50
+        
+        self.assets = {}
+        self._load_assets()
 
-# --- 3. ANSI COLOR CODES ---
-RESET = "\033[0m"
-# Colors for elevation (0=Water, 1-2=Plain, 3+=Mountain)
-ELEV_COLORS = [
-    "\033[34m",  # Blue (Level 0)
-    "\033[32m",  # Green (Level 1-2)
-    "\033[92m",  # Light Green (Level 3-4)
-    "\033[37m",  # Gray (Level 5+)
-]
-COLOR_PLAYER_1 = "\033[94m"  # Bright Blue
-COLOR_PLAYER_2 = "\033[91m"  # Bright Red
+    def _load_assets(self):
+        """ Charge les images (Sol + Unités) """
+        
+        # --- 1. LE SOL (GRASS) ---
+        try:
+            # On charge l'herbe
+            img = pygame.image.load("assets/grass.png").convert()
+            # On enlève la couleur du coin (transparence auto)
+            img.set_colorkey(img.get_at((0,0)))
+            self.assets['grass'] = pygame.transform.scale(img, (TILE_WIDTH, TILE_HEIGHT))
+        except:
+            # Si pas d'image, carré vert
+            print("⚠️ 'assets/grass.png' introuvable.")
+            s = pygame.Surface((TILE_WIDTH, TILE_HEIGHT))
+            s.fill((34, 139, 34))
+            self.assets['grass'] = s
 
-# --- 4. TERMINAL VIEW CLASS ---
+        # --- 2. TON CHEVALIER (KNIGHT) ---
+        try:
+            # On charge ton image nettoyée
+            img_k = pygame.image.load("assets/knight.png").convert_alpha()
+            
+            # PETITE SÉCURITÉ :
+            # Si tu as enlevé le fond mais que c'est resté blanc (pas transparent),
+            # ceci va rendre le blanc transparent automatiquement.
+            coin = img_k.get_at((0,0))
+            if coin.a == 255: # Si le coin n'est pas déjà transparent
+                img_k.set_colorkey(coin)
 
-class TerminalView:
-    """Manages the textual display of the map, units, and scrolling."""
-    def __init__(self, game_map: GameMap):
-        self.map = game_map
-        self.view_x = 0  # Viewport top-left X coordinate
-        self.view_y = 0  # Viewport top-left Y coordinate
+            # On redimensionne (50x50 c'est bien pour un chevalier)
+            self.assets['knight'] = pygame.transform.scale(img_k, (50, 50))
+            print("✅ Chevalier (knight.png) chargé !")
+            
+        except Exception as e:
+            print(f"⚠️ Erreur chargement Knight: {e}")
+            # Fallback : Rond rouge avec un 'K'
+            s = pygame.Surface((30, 30), pygame.SRCALPHA)
+            pygame.draw.circle(s, (200, 0, 0), (15, 15), 15)
+            self.assets['knight'] = s
 
-    def _clear_screen(self):
-        """Clears the terminal screen for a clean refresh."""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        # --- 3. AUTRES UNITÉS (Pikeman, Crossbowman) ---
+        # On crée des jetons par défaut pour eux (sauf si tu as mis des images)
+        for name, color in [("pikeman", (0, 150, 0)), ("crossbowman", (0, 100, 200))]:
+            try:
+                # Essaie de charger l'image si elle existe
+                img = pygame.image.load(f"assets/{name}.png").convert_alpha()
+                self.assets[name] = pygame.transform.scale(img, (40, 40))
+            except:
+                # Sinon on dessine un rond de couleur
+                s = pygame.Surface((30, 30), pygame.SRCALPHA)
+                pygame.draw.circle(s, color, (15, 15), 12)
+                self.assets[name] = s
 
-    def _get_tile_symbol(self, elevation):
-        """Returns the colored symbol for the terrain based on elevation."""
-        color_index = min(elevation, len(ELEV_COLORS) - 1)
-        color = ELEV_COLORS[color_index]
+    def cart_to_iso(self, row, col):
+        """ Conversion Grille -> Pixels """
+        iso_x = (col - row) * (TILE_WIDTH // 2)
+        iso_y = (row + col) * (TILE_HEIGHT // 2)
+        return iso_x, iso_y
 
-        if elevation == 0:
-            return f"{color}~{RESET}" # Water
-        elif elevation < 3:
-            return f"{color}.{RESET}" # Plain
-        else:
-            return f"{color}#{RESET}" # Elevation
+    def handle_input(self):
+        keys = pygame.key.get_pressed()
+        s = 15
+        if keys[pygame.K_LEFT]: self.camera_x += s
+        if keys[pygame.K_RIGHT]: self.camera_x -= s
+        if keys[pygame.K_UP]: self.camera_y += s
+        if keys[pygame.K_DOWN]: self.camera_y -= s
 
-    # CORRECTION 2 : Changement du typage pour 'Guerrier' (lisibilité).
-    def draw_map(self, units: list[Guerrier], tick=0):
-        """Draws the visible map section and overlays units."""
-        self._clear_screen()
+    def draw(self, screen):
+        screen.fill((20, 20, 20)) # Fond gris foncé
 
-        unit_positions = {}
+        # --- A. DESSIN DE LA MAP ---
+        if self.map:
+            rows = getattr(self.map, 'rows', 20)
+            cols = getattr(self.map, 'cols', 20)
+            
+            for row in range(rows):
+                for col in range(cols):
+                    x, y = self.cart_to_iso(row, col)
+                    final_x = x + self.camera_x
+                    final_y = y + self.camera_y
+                    
+                    # On dessine seulement si c'est dans l'écran
+                    if -64 < final_x < SCREEN_W and -32 < final_y < SCREEN_H:
+                        screen.blit(self.assets['grass'], (final_x, final_y))
+
+        # --- B. DESSIN DES UNITÉS ---
+        # On récupère la liste des unités vivantes du jeu
+        units = []
+        if hasattr(self.game, 'alive_units'):
+            units = self.game.alive_units()
+
         for unit in units:
-            # Cette ligne Nécessite la méthode get_grid_coords() dans Guerrier.py
-            unit_i, unit_j = unit.get_grid_coords()
-            view_i = unit_i - self.view_y
-            view_j = unit_j - self.view_x
+            # 1. Calcul position
+            u_x = getattr(unit, 'x', 0)
+            u_y = getattr(unit, 'y', 0)
+            
+            x_iso, y_iso = self.cart_to_iso(u_x, u_y)
+            screen_x = x_iso + self.camera_x + 8
+            screen_y = y_iso + self.camera_y - 20 # On remonte l'unité pour l'effet 3D
 
-            if 0 <= view_i < VIEW_HEIGHT and 0 <= view_j < VIEW_WIDTH:
-                unit_positions[(view_i, view_j)] = unit
+            # 2. Cercle d'équipe (au sol)
+            team = getattr(unit, 'team', '?')
+            color = COLOR_TEAM_A if team == "A" else COLOR_TEAM_B
+            pygame.draw.ellipse(screen, color, (screen_x + 5, screen_y + 40, 30, 8))
 
-        output_lines = []
-        for i in range(VIEW_HEIGHT):
-            line = []
-            for j in range(VIEW_WIDTH):
-
-                if (i, j) in unit_positions:
-                    # Draw Unit
-                    unit = unit_positions[(i, j)]
-
-                    # CORRECTION 3 : unit.unit_type n'existe pas. On utilise le nom de la classe (ex: Knight -> K).
-                    symbol = type(unit).__name__[0].upper()
-
-                    color = COLOR_PLAYER_1 if unit.player_id == 1 else COLOR_PLAYER_2
-                    line.append(f"{color}{symbol}{RESET}")
-
-                else:
-                    # Draw Terrain
-                    map_i = self.view_y + i
-                    map_j = self.view_x + j
-
-                    if 0 <= map_i < self.map.N and 0 <= map_j < self.map.M:
-                        elevation = self.map.get_elevation(map_i, map_j)
-                        line.append(self._get_tile_symbol(elevation))
-                    else:
-                        line.append(' ') # Space outside map bounds
-
-                output_lines.append("".join(line))
-
-        # Display everything
-        print(f"--- AIge of EmpAIres: Terminal View (Tick: {tick}) ---")
-        print(f"Viewport: ({self.view_x}, {self.view_y}) to ({self.view_x + VIEW_WIDTH - 1}, {self.view_y + VIEW_HEIGHT - 1})")
-        print('\n'.join(output_lines))
-        print("Controls: ZQSD to scroll, P to pause/resume, X to quit.")
-        sys.stdout.flush()
-
-    def move_viewport(self, dx: int, dy: int):
-        """Moves the viewport, respecting map boundaries."""
-        max_x = self.map.M - VIEW_WIDTH
-        max_y = self.map.N - VIEW_HEIGHT
-
-        self.view_x = max(0, min(max_x, self.view_x + dx))
-        self.view_y = max(0, min(max_y, self.view_y + dy))
+            # 3. L'Image de l'unité
+            u_type = type(unit).__name__.lower()
+            
+            # On cherche l'image correspondante, sinon on met Knight par défaut
+            img = self.assets.get(u_type, self.assets.get('knight'))
+            
+            if img:
+                # --- ✨ CORRECTION DIRECTION ✨ ---
+                # Ton image knight.png regarde à GAUCHE par défaut.
+                
+                # Équipe A (Gauche) veut regarder à DROITE -> ON RETOURNE (Miroir)
+                if team == "A":
+                    img = pygame.transform.flip(img, True, False)
+                
+                # Équipe B (Droite) veut regarder à GAUCHE -> ON LAISSE NORMAL
+                # (Puisque l'image regarde déjà à gauche)
+                # ----------------------------------
+                screen.blit(img, (screen_x, screen_y))
+            
+            # 4. Barre de vie (au-dessus)
+            hp = getattr(unit, 'hp', 0)
+            if hp > 0:
+                pygame.draw.rect(screen, (0,0,0), (screen_x, screen_y - 5, 40, 4))
+                w = min(40, max(0, int(hp / 2.5))) 
+                pygame.draw.rect(screen, (0, 255, 0), (screen_x, screen_y - 5, w, 4))
