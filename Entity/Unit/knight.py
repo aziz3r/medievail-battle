@@ -8,21 +8,12 @@ class Knight(Guerrier):
                          allArchers=0, skirmishers=0, siegeUnits=0, obsolete=0, mountedUnits=0, baseMeleeDefense=2,
                          basePierce=2, obsoleteDefense=0)
 
-        self.position = (0, 0)  
-        self.destination = None  
-        self.target = None  
-        self.lastAttackTime = 0  
-        self.isAlive = True  
-                
         
    
 
     def _calculate_damage(self, target): 
         k_elev = 1.0 #No elevation for the moment
-        damage = self.baseMelee
-        damage -= target.armor
-        damage = k_elev * damage
+        damage = k_elev * (self.baseMelee - target.armor)
         damage = max(1, damage) #It must have at least one damage
         return damage
-
     

@@ -59,84 +59,73 @@ class Guerrier(ABC):
         self.basePierce = basePierce
         self.obsoleteDefense = obsoleteDefense
         self.mountedUnitsDefense = mountedUnitsDefense
-
         self.position = (0.0, 0.0)      # position on the map
-        self.vivant = True              # is the unit alive
-        self.last_attack_time = 0.0     # time of the last attack
+        self.lastAttackTime = 0.0     # time of the last attack
 
-    """à implémenter plus tard selon le type de guerrier"""
     def se_deplacer(self, destination: tuple, delta_t: float = 1.0): 
         """
         Déplace le guerrier vers la destination en fonction de sa vitesse.
         delta_t = durée du "tick" (en secondes)
         """
-        if not self.vivant:
-            return
+        if self.hp<=0:
+            return #Check if the warrior is alive
 
         x, y = self.position
         dx = destination[0] - x
         dy = destination[1] - y
         distance = math.sqrt(dx**2 + dy**2)
 
-        if distance == 0:
+        step = self.speed * delta_t
+
+        if (distance == 0 or distance<=step):
+            self.position = destination
+            self.destination = None
             return  # already at destination
 
-        max_move = (self.speed or 0) * delta_t
-
-        if distance <= max_move:
-            self.position = destination
+    
         else:
-            ratio = max_move / distance
-            self.position = (x + dx * ratio, y + dy * ratio)
+            ratio = step / distance
+            new_x= x + dx * ratio
+            new_y= y + dy * ratio
+            self.position = (new_x, new_y)
 
         print(f"{type(self).__name__} se déplace vers {self.position}")
+
+
+    def _calculate_distance(self, target):
+        dx = self.position[0] - target.position[0]
+        dy = self.position[1] - target.position[1]
+        return math.sqrt(dx**2 + dy**2)
+
         
-    def attaquer(self, cible: "Guerrier", elevation_factor: float = 1.0):
+    def attaquer(self, target, currentTime):
         """
-        Attaque une cible selon la formule de AoE2 :
-        Damage = max(1, kelev × sum(max(0, Attack_i − Armor_i)))
+        Attaque une cible selon la formule de AoE2
         """
-        if not self.vivant or not cible.vivant:
-            return
-
-        # Check range
-        dx = cible.position[0] - self.position[0]
-        dy = cible.position[1] - self.position[1]
-        distance = math.sqrt(dx**2 + dy**2)
-        if distance > (self.range or 1):
-            print(f"{type(self).__name__} est hors de portée de {type(cible).__name__}.")
-            return
-
+        #Check if the warrior and the target is alive
+        if self.hp <= 0 or target.hp <= 0:
+            return False
         # Check the time between attacks
-        now = time.time()
-        if now - self.last_attack_time < (self.reloadTime or 1):
-            return  # not ready yet
+        if currentTime - self.lastAttackTime < self.reloadTime:
+            return False
+        
+        distance = self._calculate_distance(target)
+        if distance > self.range:
+            return False
+        
+        damage = self._calculate_damage(target)
 
-        # calculate base damage
-        base_damage = max(0, (self.attaque or 0) - (cible.armor or 0))
-
-        #apply bonuses for specific target types 
-        bonus_total = 0
-        for attr in ["mountedUnits", "elephants", "ships", "camels", "mamelukes", "allArchers"]:
-            bonus_val = getattr(self, attr, None)
-            if bonus_val and getattr(cible, attr + "Defense", None) is not None:
-                bonus_total += bonus_val
-
-        total_damage = max(1, elevation_factor * (base_damage + bonus_total))
-
-        #apply damage to target
-        cible.vie_restante -= total_damage
-        if cible.vie_restante <= 0:
-            cible.vivant = False
-            cible.vie_restante = 0
-
+         #apply damage to target
+        target.hp -= damage
         # update last attack time
-        self.last_attack_time = now
+        self.lastAttackTime = currentTime
 
-        print(f"{type(self).__name__} inflige {total_damage:.1f} dégâts à {type(cible).__name__} "
-              f"(PV restants : {cible.vie_restante:.1f})")
+        if target.hp <= 0:
+            target.hp = 0
+        
+        return True
     
     @abstractmethod
-    def _calculate_damage(self, cible):
+    def _calculate_damage(self, target):
         """Chaque unité a sa formule spécifique de dégâts"""
         pass

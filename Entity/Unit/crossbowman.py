@@ -12,7 +12,17 @@ class Crossbowman(Guerrier):
                         allArchers=0, baseMeleeDefense=0, basePierce=0, obsoleteDefense=0, cooldown=0)
         
 
-       
-    def _calculate_damage(self, cible):
-        """calcul des dégats pour Crossbowman"""
+    def _calculate_damage(self, target):
+        precision_roll = random.randint(1, 100)
+        if precision_roll > self.accuracy:
+            return 0 
+        
+
+        k_elev = 1.0 #No elevation for the moment
+        damage = k_elev * (self.basePierceAttack - target.pierceArmor)
+
+        if isinstance(target, Pikeman):
+            damage += self.spearUnits  
+        
+        return max(1, damage)
     
