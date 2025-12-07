@@ -13,20 +13,20 @@ class BattleMap:
         # grid[i][j] = liste d'unités dans la case (i, j)
         self.grid = [[[] for _ in range(cols)] for _ in range(rows)]
 
-    def in_bounds(self, row: int, col: int) -> bool:
+    def inBounds(self, row: int, col: int) -> bool:
         return 0 <= row < self.rows and 0 <= col < self.cols
 
-    def add_unit(self, row: int, col: int, team: str, unit) -> None:
+    def addUnit(self, row: int, col: int, team: str, unit) -> None:
         """
         Ajoute une unité sur la case (row, col)
         team = 'r' (rouge), 'b' (bleu), etc.
         unit = objet Knight / Pikeman / Crossbowman...
         """
-        if not self.in_bounds(row, col):
+        if not self.inBounds(row, col):
             raise ValueError(f"Case ({row}, {col}) hors de la map")
         self.grid[row][col].append([team, unit])
 
-    def remove_unit(self, row: int, col: int, team: str, unit) -> None:
+    def removeUnit(self, row: int, col: int, team: str, unit) -> None:
         """
         Supprime une unité morte de la case (row, col)
         team = 'r' (rouge), 'b' (bleu), etc.
@@ -38,16 +38,16 @@ class BattleMap:
         self.grid[row][col] = self.grid[row][col][:indice] + self.grid[row][col][indice+1:] ## supprime l'unité
    
 
-    def get_units(self, row: int, col: int):
-        if not self.in_bounds(row, col):
+    def getUnits(self, row: int, col: int):
+        if not self.inBounds(row, col):
             return []
         return self.grid[row][col]
 
-    def to_matrix(self):
+    def toMatrix(self):
         """Retourne la matrice brute (pour l'utiliser dans Simulation)."""
         return self.grid
 
-    def _symbol_for_cell(self, cell):
+    def symbolForCell(self, cell):
         """
         Pour l'affichage :
         - vide -> "."
@@ -62,13 +62,13 @@ class BattleMap:
         team, unit = cell[0]
 
         # Récupère le type d'unité pour choisir une lettre
-        unit_name = type(unit).__name__.lower()
+        unitName = type(unit).__name__.lower()
 
-        if "knight" in unit_name:
+        if "knight" in unitName:
             letter = "K"
-        elif "pikeman" in unit_name:
+        elif "pikeman" in unitName:
             letter = "P"
-        elif "crossbowman" in unit_name:
+        elif "crossbowman" in unitName:
             letter = "C"
         else:
             letter = "U"  # Unit
@@ -83,11 +83,11 @@ class BattleMap:
 
         return f"{letter}{suffix}"
 
-    def print_ascii(self):
+    def printAscii(self):
         """Affiche la map dans le terminal."""
         for i in range(self.rows):
-            row_str = ""
+            rowStr = ""
             for j in range(self.cols):
-                row_str += self._symbol_for_cell(self.grid[i][j]) + " "
-            print(row_str)
+                rowStr += self.symbolForCell(self.grid[i][j]) + " "
+            print(rowStr)
         print()  # ligne vide à la fin

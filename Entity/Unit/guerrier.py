@@ -59,16 +59,16 @@ class Guerrier(ABC):
         self.basePierce = basePierce
         self.obsoleteDefense = obsoleteDefense
         self.mountedUnitsDefense = mountedUnitsDefense
-        self.position = (0.0, 0.0)      # position on the map
-        self.lastAttackTime = 0.0     # time of the last attack
+        self.position = (0.0, 0.0)      # position sur la map
+        self.lastAttackTime = 0.0     # temps de la dernière attaque
 
-    def se_deplacer(self, destination: tuple, delta_t: float = 1.0): 
+    def seDeplacer(self, destination: tuple, delta_t: float = 1.0): 
         """
         Déplace le guerrier vers la destination en fonction de sa vitesse.
         delta_t = durée du "tick" (en secondes)
         """
         if self.hp<=0:
-            return #Check if the warrior is alive
+            return #verifier si le guerrier est vivant
 
         x, y = self.position
         dx = destination[0] - x
@@ -80,7 +80,7 @@ class Guerrier(ABC):
         if (distance == 0 or distance<=step):
             self.position = destination
             self.destination = None
-            return  # already at destination
+            return  # deja à la destination
 
     
         else:
@@ -92,40 +92,40 @@ class Guerrier(ABC):
         print(f"{type(self).__name__} se déplace vers {self.position}")
 
 
-    def _calculate_distance(self, target):
-        dx = self.position[0] - target.position[0]
-        dy = self.position[1] - target.position[1]
+    def calculerDistance(self, cible):
+        dx = self.position[0] - cible.position[0]
+        dy = self.position[1] - cible.position[1]
         return math.sqrt(dx**2 + dy**2)
 
         
-    def attaquer(self, target, currentTime):
+    def attaquer(self, cible, currentTime):
         """
         Attaque une cible selon la formule de AoE2
         """
-        #Check if the warrior and the target is alive
-        if self.hp <= 0 or target.hp <= 0:
+        #verifie si la cible et le guerrier sont vivants
+        if self.hp <= 0 or cible.hp <= 0:
             return False
-        # Check the time between attacks
+        # verifie le temps entre les attaques
         if currentTime - self.lastAttackTime < self.reloadTime:
             return False
         
-        distance = self._calculate_distance(target)
+        distance = self.calculerDistance(cible)
         if distance > self.range:
             return False
         
-        damage = self._calculate_damage(target)
+        dommage = self.calculerDommage(cible)
 
-         #apply damage to target
-        target.hp -= damage
-        # update last attack time
+        #apllique les dommages à la cible
+        cible.hp -= dommage
+        #met à jour le temps de la dernière attaque
         self.lastAttackTime = currentTime
 
-        if target.hp <= 0:
-            target.hp = 0
+        if cible.hp <= 0:
+            cible.hp = 0
         
         return True
     
     @abstractmethod
-    def _calculate_damage(self, target):
+    def calculerDommage(self, cible):
         """Chaque unité a sa formule spécifique de dégâts"""
         pass

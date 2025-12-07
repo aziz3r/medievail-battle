@@ -11,9 +11,9 @@ class Knight(Guerrier):
         
    
 
-    def _calculate_damage(self, target): 
-        k_elev = 1.0 #No elevation for the moment
-        damage = k_elev * (self.baseMelee - target.armor)
-        damage = max(1, damage) #It must have at least one damage
-        return damage
+    def calculerDommage(self, target): 
+        kElev = 1.0 #Pas d'élévation pour le moment
+        dommage = kElev * (self.baseMelee - target.armor)
+        dommage = max(1, dommage) #Il doit y avoir au moins un dommage
+        return dommage
     

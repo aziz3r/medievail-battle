@@ -14,19 +14,19 @@ class Pikeman(Guerrier):
 		)
 
 	
-	def _calculate_damage(self, target):
-		k_elev = 1.0 #No elevation for the moment
-		damage = k_elev * (self.baseMelee - target.armor)
+	def calculerDommage(self, cible):
+		kElev = 1.0 #Pas d'élévation pour le moment
+		dommage = kElev * (self.baseMelee - cible.armor)
 
-		if isinstance(target, Knight):
-			damage += self.mountedUnits
+		if isinstance(cible, Knight):
+			dommage += self.mountedUnits
 	
-		target_name = target.__class__.__name__.lower()
+		cible_name = cible.__class__.__name__.lower()
 		
-		if "camel" in target_name:
-			damage += self.camels
-		if "elephant" in target_name:
-			damage += self.elephants
+		if "camel" in cible_name:
+			dommage += self.camels
+		if "elephant" in cible_name:
+			dommage += self.elephants
 			
-		return max(1, damage)
+		return max(1, dommage)
 	
