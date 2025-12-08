@@ -54,7 +54,7 @@ class BattleMap:
     
     def distance(self, u1, u2):
         """Distance de Manhattan simple."""
-        return abs(u1.x - u2.x) + abs(u1.y - u2.y)
+        return ( (u1.x - u2.x)**2 + (u1.y - u2.y)**2 ) ** 0.5
 
     def print_ascii(self):  
         """Affichage simple de la map."""
