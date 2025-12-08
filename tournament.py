@@ -3,21 +3,19 @@ from collections import defaultdict
 
 # --- IMPORTS ---
 # Assure-toi que ces fichiers existent et contiennent les classes
-from main import build_simple_vs_braindead_battle
-from ai import CaptainBraindead, MajorDaft ,GeneralSmart
-# Décommente la ligne suivante si tu as créé le fichier pour GeneralSmart
-# from ai import GeneralSmart 
+from main import scenario_simple_vs_braindead
+from ai import CaptainBraindead, MajorDaft 
+
 
 # --- CONFIGURATION ---
 AVAILABLE_GENERALS = {
     "Braindead": CaptainBraindead,
     "Daft": MajorDaft,
-    "Smart": GeneralSmart,
-    # "Smart": GeneralSmart, # Décommente si ton IA est prête
+   
 }
 
 AVAILABLE_SCENARIOS = {
-    "Scenario_Standard": build_simple_vs_braindead_battle,
+    "Scenario_Standard": scenario_simple_vs_braindead,
 }
 
 # --- MOTEUR HEADLESS (Match Rapide) ---
@@ -216,7 +214,7 @@ if __name__ == "__main__":
     # --- CONFIGURATION DU LANCEMENT ---
     # Liste des participants
     # (Doivent correspondre aux clés dans AVAILABLE_GENERALS)
-    ai_participants = ["Braindead", "Daft","Smart"] 
+    ai_participants = ["Braindead", "Daft"] 
     # Ajoute "Smart" à la liste quand tu auras codé l'IA
     
     scenarios = ["Scenario_Standard"]

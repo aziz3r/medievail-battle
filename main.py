@@ -3,13 +3,8 @@
 import os
 import time
 
-from map import BattleMap
 from game import Game
-from ai import CaptainBraindead, MajorDaft
-
-from knight import Knight
-from pikeman import Pikeman
-from crossbowman import Crossbowman
+from scenarios import scenario_simple_vs_braindead  # on importe notre scénario
 
 
 TEAM_INFO = {
@@ -18,62 +13,6 @@ TEAM_INFO = {
 }
 
 
-# -------------------------------------------------------------
-# Scénario : IA agressive (A) vs défense statique (B)
-# -------------------------------------------------------------
-def build_simple_vs_braindead_battle() -> Game:
-    rows, cols = 20, 20
-    battle_map = BattleMap(rows=rows, cols=cols)
-
-    controllers = {
-        "A": MajorDaft("A"),          # IA qui avance et attaque
-        "B": CaptainBraindead("B"),  # IA statique
-    }
-
-    game = Game(battle_map, controllers)
-
-    # ---------------------------------------------------------
-    # ARMÉE A (à gauche) — IA agressive
-    # - front de piquiers
-    # - quelques knights derrière
-    # - quelques archers
-    # ---------------------------------------------------------
-    # ligne de piquiers
-    for r in range(6, 11):      # rows 6 → 10
-        game.add_unit(Pikeman(), "A", row=r, col=3)
-
-    # knights
-    for r in range(7, 10):
-        game.add_unit(Knight(), "A", row=r, col=2)
-
-    # crossbowmen
-    for r in range(6, 11, 2):
-        game.add_unit(Crossbowman(), "A", row=r, col=1)
-
-    # ---------------------------------------------------------
-    # ARMÉE B (à droite) — CaptainBraindead
-    # - front de piquiers plus dense
-    # - quelques knights
-    # - ligne d'arbalétriers en fond
-    # ---------------------------------------------------------
-    # ligne de piquiers
-    for r in range(6, 12):      # rows 6 → 11
-        game.add_unit(Pikeman(), "B", row=r, col=cols - 4)   # col=16
-
-    # knights
-    for r in range(7, 11, 2):
-        game.add_unit(Knight(), "B", row=r, col=cols - 5)    # col=15
-
-    # crossbowmen
-    for r in range(5, 13, 2):
-        game.add_unit(Crossbowman(), "B", row=r, col=cols - 3)  # col=17
-
-    return game
-
-
-# -------------------------------------------------------------
-# Affichage
-# -------------------------------------------------------------
 def clear_terminal():
     if os.name == "nt":
         os.system("cls")
@@ -116,12 +55,9 @@ def render(game: Game):
     for u in game.alive_units():
         print(
             f"- {type(u).__name__} (team={u.team}), "
-            f"HP={u.hp:.1f}, pos=({u.x:.0f},{u.y:.0f})"
+            f"HP={u.hp:.1f}, pos=({u.x:.2f},{u.y:.2f})"
         )
     print()
-
-    print("Carte :")
-    game.map.print_ascii()
 
     print("Événements récents :")
     for log in game.logs[-7:]:
@@ -129,24 +65,101 @@ def render(game: Game):
     print()
 
 
-# -------------------------------------------------------------
-# Boucle principale
-# -------------------------------------------------------------
+def log_state_to_file(game: Game, step: int, filepath: str):
+    def format_intent(u):
+        intent = getattr(u, "intent", None)
+        if intent is None:
+            return "none"
+        kind = intent[0]
+        if kind == "move_to":
+            _, tx, ty = intent
+            return f"move_to({tx:.2f},{ty:.2f})"
+        if kind == "attack":
+            _, target = intent
+            if target is None or not hasattr(target, "hp"):
+                return "attack(?)"
+            return f"attack({target.__class__.__name__})"
+        return str(kind)
+
+    with open(filepath, "a", encoding="utf-8") as f:
+        f.write(
+            f"===== STEP {step} | temps simulé = {game.time:.2f} s =====\n"
+        )
+        for u in game.alive_units():
+            line = (
+                f"- team={getattr(u, 'team', '?')}, "
+                f"type={type(u).__name__}, "
+                f"HP={u.hp:.1f}, "
+                f"pos=({u.x:.2f},{u.y:.2f}), "
+                f"intent={format_intent(u)}\n"
+            )
+            f.write(line)
+        f.write("\n")
+
+
+def write_battle_summary(game: Game, filepath: str):
+    summary = game.get_battle_summary()
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("===== RÉSUMÉ DE LA BATAILLE =====\n\n")
+        f.write(f"Durée simulée : {summary['duration']:.2f} s\n")
+        f.write(f"Gagnant : {summary['winner']}\n\n")
+
+        f.write("---- Composition initiale ----\n")
+        for team, stats in summary["initial_counts"].items():
+            f.write(f"Équipe {team} : {stats['units']} unités\n")
+            for tname, cnt in stats["by_type"].items():
+                f.write(f"   - {cnt}x {tname}\n")
+        f.write("\n")
+
+        f.write("---- Survivants ----\n")
+        for team, stats in summary["survivors"].items():
+            f.write(f"Équipe {team} : {stats['units']} unités en vie\n")
+            for tname, cnt in stats["by_type"].items():
+                f.write(f"   - {cnt}x {tname}\n")
+        f.write("\n")
+
+        f.write("---- Pertes ----\n")
+        for team, stats in summary["losses"].items():
+            f.write(f"Équipe {team} : {stats['units']} unités perdues\n")
+            for tname, cnt in stats["by_type"].items():
+                f.write(f"   - {cnt}x {tname}\n")
+        f.write("\n")
+
+        f.write("---- Dégâts infligés / subis ----\n")
+        for team, dmg in summary["team_damage"].items():
+            recv = summary["team_damage_received"].get(team, 0.0)
+            kills = summary["kills"].get(team, 0)
+            f.write(
+                f"Équipe {team} : "
+                f"dégâts infligés = {dmg:.1f}, "
+                f"dégâts subis = {recv:.1f}, "
+                f"kills = {kills}\n"
+            )
+
+
 def main():
-    game = build_simple_vs_braindead_battle()
+    # 1) Construire le scénario (on pourra changer ici pour un autre scénario)
+    game = scenario_simple_vs_braindead()
 
-    max_turns = 200
-    turn = 0
+    dt = 0.2
+    max_time = 200.0
+    step_index = 0
 
-    while not game.is_finished() and turn < max_turns:
-        turn += 1
-        game.step(dt=1.0)
+    state_log_file = "battle_state.txt"
+    with open(state_log_file, "w", encoding="utf-8") as f:
+        f.write("LOG D'ÉTAT PAR STEP (temps continu)\n\n")
+
+    # 2) Boucle de simulation
+    while not game.is_finished() and game.time < max_time:
+        step_index += 1
+        game.step(dt=dt)
+        log_state_to_file(game, step_index, state_log_file)
 
         clear_terminal()
-        print(f"===== Tour {turn} =====")
+        print(f"===== Step {step_index} | temps simulé = {game.time:.1f} s =====")
         render(game)
-
-        time.sleep(0.4)
+        time.sleep(0.1)
 
     print("===== Fin de la bataille =====")
     render(game)
@@ -159,6 +172,10 @@ def main():
         label = info.get("name", f"Équipe {winner}")
         ia_name = info.get("ia", "?")
         print(f"Victoire de {label} (team {winner}, IA={ia_name}) !")
+
+    # 3) Résumé de bataille
+    write_battle_summary(game, "battle_summary.txt")
+    print("\nRésumé de bataille écrit dans battle_summary.txt")
 
 
 if __name__ == "__main__":

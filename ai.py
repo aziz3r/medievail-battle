@@ -1,20 +1,25 @@
 # ai.py
 from __future__ import annotations
-from typing import List, Any, Tuple
+from typing import List, Any
 
 from game import Game
 
-# Type d'action:
-# ("move", unit, new_row, new_col)
-# ("attack", attacker, target)
-Action = Tuple[Any, ...]
-
 
 class BaseController:
-    def __init__(self, team: str):
+    def __init__(self, team: str, decision_interval: float = 0.5):
+        """
+        :param team: identifiant de l'équipe ("A", "B", etc.)
+        :param decision_interval: temps simulé minimal entre deux décisions (en secondes)
+        """
         self.team = team
+        self.decision_interval = float(decision_interval)
 
-    def decide_actions(self, game: Game) -> List[Action]:
+    def decide_actions(self, game: Game) -> List[tuple[Any, ...]]:
+        """
+        Doit renvoyer une liste d'actions sous la forme :
+        - ("move", unit, target_x, target_y)
+        - ("attack", attacker, target)
+        """
         raise NotImplementedError
 
 
@@ -27,8 +32,12 @@ class CaptainBraindead(BaseController):
     - Sinon elles ne font rien.
     """
 
-    def decide_actions(self, game: Game) -> List[Action]:
-        actions: List[Action] = []
+    def __init__(self, team: str, decision_interval: float = 0.7):
+        # Par défaut, Braindead décide assez rarement
+        super().__init__(team, decision_interval)
+
+    def decide_actions(self, game: Game) -> List[tuple[Any, ...]]:
+        actions: List[tuple[Any, ...]] = []
         my_units = game.alive_units_of_team(self.team)
         enemies = game.enemy_units_of(self.team)
 
@@ -44,21 +53,22 @@ class CaptainBraindead(BaseController):
             # On ne considère que les ennemis dans la line of sight
             for e in enemies:
                 dist = game.map.distance(u, e)
-                if dist <= los:
-                    if dist < best_dist:
-                        best_dist = dist
-                        best_target = e
+                if dist <= los and dist < best_dist:
+                    best_dist = dist
+                    best_target = e
 
             if best_target is None:
-                # Rien en vue -> aucune action
+                # Rien en vue -> aucune action / aucune intention
                 continue
 
-            # S'il est dans la portée d'attaque, on attaque
+            # S'il est dans la portée d'attaque, on donne l'intention "attack"
             if hasattr(u, "in_range") and u.in_range(best_dist):
-                actions.append(("attack", u, best_target))
-            # Sinon, Braindead ne bouge pas → aucune action
+                u.intent = ("attack", best_target)
+            # Sinon, Braindead ne bouge pas → il ne met pas d'intention de move
 
+        # Plus besoin de renvoyer des actions, tout passe par intent
         return actions
+
 
 
 class MajorDaft(BaseController):
@@ -67,42 +77,40 @@ class MajorDaft(BaseController):
     - Ordonne à chaque unité d'attaquer l'ENNEMI LE PLUS PROCHE,
       sans aucune autre considération.
     - Si l'ennemi est à portée -> attaque.
-    - Sinon -> se rapproche d'une case vers lui (avance en ligne droite).
+    - Sinon -> l'unité se déplace en ligne droite vers cet ennemi.
+    - Le moteur de jeu (_do_move) se charge de limiter la distance
+      parcourue à speed * dt.
     """
 
-    def decide_actions(self, game: Game) -> List[Action]:
-        actions: List[Action] = []
+    def __init__(self, team: str, decision_interval: float = 0.3):
+        # Daft réagit un peu plus souvent que Braindead
+        super().__init__(team, decision_interval)
+
+
+    def decide_actions(self, game: Game) -> List[tuple[Any, ...]]:
+        actions: List[tuple[Any, ...]] = []
         my_units = game.alive_units_of_team(self.team)
 
         for u in my_units:
+            # Trouver l'ennemi le plus proche
             target = game.find_closest_enemy(u)
             if target is None:
                 continue
 
+            # Distance réelle (euclidienne) entre u et target
             dist = game.map.distance(u, target)
 
             # Si on peut frapper, on frappe
             if hasattr(u, "in_range") and u.in_range(dist):
-                actions.append(("attack", u, target))
+                u.intent = ("attack", target)
                 continue
 
-            # Sinon on avance d'UNE case vers la cible (IA débile mais agressive)
-            old_row, old_col = int(getattr(u, "y", 0)), int(getattr(u, "x", 0))
-            target_row, target_col = int(getattr(target, "y", 0)), int(getattr(target, "x", 0))
+            # Sinon, on demande un mouvement vers la position de la cible
+            target_x = float(getattr(target, "x", 0.0))
+            target_y = float(getattr(target, "y", 0.0))
+            u.intent = ("move_to", target_x, target_y)
 
-            new_row, new_col = old_row, old_col
 
-            if old_row < target_row:
-                new_row = old_row + 1
-            elif old_row > target_row:
-                new_row = old_row - 1
-            else:
-                if old_col < target_col:
-                    new_col = old_col + 1
-                elif old_col > target_col:
-                    new_col = old_col - 1
-
-            actions.append(("move", u, new_row, new_col))
 
         return actions
 
@@ -113,12 +121,3 @@ class SimpleAI(MajorDaft):
     Même comportement que MajorDaft.
     """
     pass
-
-class GeneralSmart(BaseController):
-    def __init__(self, team_id):
-        super().__init__(team_id)
-        self.name = "General SMART"
-
-    def decide_actions(self, game):
-        # Une stratégie plus intelligente ici...
-        return []

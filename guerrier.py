@@ -16,7 +16,8 @@ class Guerrier(ABC):
         self.buildTime = float(buildTime)
         self.reloadTime = float(reloadTime)
         self.cooldown = float(cooldown)
-
+        self.intent = None     # mémorise le dernier ordre reçu
+        
         # Position (simple, utilisable avec la map)
         self.x = float(x)
         self.y = float(y)
@@ -69,6 +70,8 @@ class Guerrier(ABC):
         real = max(0.0, float(dmg))
         target.hp = max(0.0, float(target.hp) - real)
         return real
+
+    
 
     # --- Méthodes à spécialiser ---
 

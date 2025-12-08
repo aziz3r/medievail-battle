@@ -1,67 +1,73 @@
 # map.py
+import math
 
 class BattleMap:
     """
-    Map sous forme de matrice row x col.
-    Chaque case contient une unité ou None.
+    Carte continue de taille rows x cols.
+    Les unités ont des coordonnées flottantes (x, y).
+    La grille ne sert QUE pour l'affichage (approximation).
     """
 
-    def __init__(self, rows=5, cols=5):
+    def __init__(self, rows=20, cols=20):
         self.rows = rows
         self.cols = cols
-        self.grid = [[None for _ in range(cols)] for _ in range(rows)]
 
-    def in_bounds(self, row, col):
-        return 0 <= row < self.rows and 0 <= col < self.cols
+    def in_bounds(self, x, y):
+        """Vérifie que (x, y) est dans la carte."""
+        return 0.0 <= x < self.cols and 0.0 <= y < self.rows
 
     def place_unit(self, unit, row, col):
-        """Place une unité sur la map et met à jour sa position."""
-        if not self.in_bounds(row, col):
+        """
+        Place initialement l'unité à la position (col, row).
+        On stocke en flottant, mais row/col peuvent être des entiers.
+        """
+        x = float(col)
+        y = float(row)
+        if not self.in_bounds(x, y):
             raise ValueError("Position hors de la map")
+        unit.x = x
+        unit.y = y
 
-        if self.grid[row][col] is not None:
-            raise ValueError("Case déjà occupée")
-
-        self.grid[row][col] = unit
-        unit.x = col
-        unit.y = row
-
-    def move_unit(self, unit, new_row, new_col):
-        """Déplace une unité sur la map en respectant les collisions."""
-        if not self.in_bounds(new_row, new_col):
+    def move_unit(self, unit, new_x, new_y):
+        """
+        Déplace l'unité en coordonnées continues.
+        Pas de collisions de cases ici, juste les bornes.
+        """
+        new_x = float(new_x)
+        new_y = float(new_y)
+        if not self.in_bounds(new_x, new_y):
             return False
 
-        # ancienne position
-        old_row, old_col = int(unit.y), int(unit.x)
-
-        # vérifier que c'est bien lui sur la case
-        if self.grid[old_row][old_col] != unit:
-            return False
-
-        if self.grid[new_row][new_col] is not None:
-            # case occupée → pas de move
-            return False
-
-        # déplacer
-        self.grid[old_row][old_col] = None
-        self.grid[new_row][new_col] = unit
-
-        unit.x = new_col
-        unit.y = new_row
-
+        unit.x = new_x
+        unit.y = new_y
         return True
 
-    
     def distance(self, u1, u2):
-        """Distance de Manhattan simple."""
-        return ( (u1.x - u2.x)**2 + (u1.y - u2.y)**2 ) ** 0.5
+        """Distance euclidienne (continue) entre deux unités."""
+        dx = float(u1.x) - float(u2.x)
+        dy = float(u1.y) - float(u2.y)
+        return math.hypot(dx, dy)
 
-    def print_ascii(self):  
-        """Affichage simple de la map."""
+    def print_ascii(self, units):
+        """
+        Affichage simple : on projette les unités sur la grille
+        en arrondissant leurs coordonnées à l'entier le plus proche.
+        """
+        grid = [[None for _ in range(self.cols)] for _ in range(self.rows)]
+
+        for u in units:
+            r = int(round(u.y))
+            c = int(round(u.x))
+            if 0 <= r < self.rows and 0 <= c < self.cols:
+                # Si plusieurs unités se projettent sur la même case,
+                # on affiche la première (c'est juste un debug visuel)
+                if grid[r][c] is None:
+                    grid[r][c] = u
+
         for r in range(self.rows):
             row_str = ""
             for c in range(self.cols):
-                u = self.grid[r][c]
+                u = grid[r][c]
                 if u is None:
                     row_str += " . "
                 else:
@@ -69,13 +75,3 @@ class BattleMap:
                     row_str += f" {name} "
             print(row_str)
         print()
-
-    def get_unit(self, row, col):
-        if not self.in_bounds(row, col):
-            return None
-        return self.grid[row][col]
-
-    def remove_unit(self, unit):
-        row, col = int(unit.y), int(unit.x)
-        if self.in_bounds(row, col) and self.grid[row][col] == unit:
-            self.grid[row][col] = None
