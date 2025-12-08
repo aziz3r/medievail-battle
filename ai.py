@@ -1,0 +1,123 @@
+# ai.py
+from __future__ import annotations
+from typing import List, Any
+
+from game import Game
+
+
+class BaseController:
+    def __init__(self, team: str, decision_interval: float = 0.5):
+        """
+        :param team: identifiant de l'équipe ("A", "B", etc.)
+        :param decision_interval: temps simulé minimal entre deux décisions (en secondes)
+        """
+        self.team = team
+        self.decision_interval = float(decision_interval)
+
+    def decide_actions(self, game: Game) -> List[tuple[Any, ...]]:
+        """
+        Doit renvoyer une liste d'actions sous la forme :
+        - ("move", unit, target_x, target_y)
+        - ("attack", attacker, target)
+        """
+        raise NotImplementedError
+
+
+class CaptainBraindead(BaseController):
+    """
+    Captain BRAINDEAD (IA n°1)
+    - Ne donne aucun ordre de déplacement.
+    - Les unités n'attaquent que si un ennemi est déjà dans leur ligne de vue
+      et (idéalement) à portée.
+    - Sinon elles ne font rien.
+    """
+
+    def __init__(self, team: str, decision_interval: float = 0.7):
+        # Par défaut, Braindead décide assez rarement
+        super().__init__(team, decision_interval)
+
+    def decide_actions(self, game: Game) -> List[tuple[Any, ...]]:
+        actions: List[tuple[Any, ...]] = []
+        my_units = game.alive_units_of_team(self.team)
+        enemies = game.enemy_units_of(self.team)
+
+        for u in my_units:
+            if not enemies:
+                continue
+
+            best_target = None
+            best_dist = float("inf")
+
+            los = float(getattr(u, "lineOfSight", 0.0))
+
+            # On ne considère que les ennemis dans la line of sight
+            for e in enemies:
+                dist = game.map.distance(u, e)
+                if dist <= los and dist < best_dist:
+                    best_dist = dist
+                    best_target = e
+
+            if best_target is None:
+                # Rien en vue -> aucune action / aucune intention
+                continue
+
+            # S'il est dans la portée d'attaque, on donne l'intention "attack"
+            if hasattr(u, "in_range") and u.in_range(best_dist):
+                u.intent = ("attack", best_target)
+            # Sinon, Braindead ne bouge pas → il ne met pas d'intention de move
+
+        # Plus besoin de renvoyer des actions, tout passe par intent
+        return actions
+
+
+
+class MajorDaft(BaseController):
+    """
+    Major DAFT (IA n°2)
+    - Ordonne à chaque unité d'attaquer l'ENNEMI LE PLUS PROCHE,
+      sans aucune autre considération.
+    - Si l'ennemi est à portée -> attaque.
+    - Sinon -> l'unité se déplace en ligne droite vers cet ennemi.
+    - Le moteur de jeu (_do_move) se charge de limiter la distance
+      parcourue à speed * dt.
+    """
+
+    def __init__(self, team: str, decision_interval: float = 0.3):
+        # Daft réagit un peu plus souvent que Braindead
+        super().__init__(team, decision_interval)
+
+
+    def decide_actions(self, game: Game) -> List[tuple[Any, ...]]:
+        actions: List[tuple[Any, ...]] = []
+        my_units = game.alive_units_of_team(self.team)
+
+        for u in my_units:
+            # Trouver l'ennemi le plus proche
+            target = game.find_closest_enemy(u)
+            if target is None:
+                continue
+
+            # Distance réelle (euclidienne) entre u et target
+            dist = game.map.distance(u, target)
+
+            # Si on peut frapper, on frappe
+            if hasattr(u, "in_range") and u.in_range(dist):
+                u.intent = ("attack", target)
+                continue
+
+            # Sinon, on demande un mouvement vers la position de la cible
+            target_x = float(getattr(target, "x", 0.0))
+            target_y = float(getattr(target, "y", 0.0))
+            u.intent = ("move_to", target_x, target_y)
+
+
+
+        return actions
+
+
+class SimpleAI(MajorDaft):
+    """
+    Alias de MajorDaft pour compatibilité avec l'ancien code.
+    Même comportement que MajorDaft.
+    """
+    pass
