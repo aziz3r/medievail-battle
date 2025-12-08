@@ -83,7 +83,7 @@ if __name__ == "__main__":
         else:
             raise ValueError("Type inconnu : utilise 'crossbowman', 'pikeman' ou 'knight'")
     
-    def scenarioLanchester(typeUnite, N, battlemap: BattleMap):
+    def scenarioLanchester(typeUnite, N):
         """
         Crée un scénario N vs 2N conforme aux lois de Lanchester.
         - typeUnite: "crossbowman", "pikeman" ou "knight"
@@ -91,6 +91,7 @@ if __name__ == "__main__":
         - battlemap: instance de BattleMap
         """
     
+        battlemap = BattleMap(rows=10, cols=15)
         # Armée rouge (A) = N soldats
         armyA = creerUnitesSelonType(typeUnite, N, "r")
     
@@ -124,17 +125,17 @@ if __name__ == "__main__":
             if col >= cols - 1:
                 col = col_start
                 rowB -= 1  # bleu avance vers le haut pour rester face aux rouges
-    
+        
+        battlemap.printAscii()
         return armyA, armyB
+        
+        
     
-        print(len(armyB))  # 40
     
-    grille = BattleMap(rows=10, cols=15)  # dimensions suffisantes pour placer les unités
-    
-    armyA, armyB = scenarioLanchester("crossbowman", 15, grille)
+    armyA, armyB = scenarioLanchester("crossbowman", 20)
     
     print("Nombre d'unités armée A :", len(armyA))  # devrait être 20
     print("Nombre d'unités armée B :", len(armyB))  # devrait être 40
     
-    grille.printAscii()
+    
     
