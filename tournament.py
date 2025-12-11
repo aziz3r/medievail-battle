@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 
 # --- IMPORTS ---
-# Assure-toi que ces fichiers existent et contiennent les classes
+
 from main import scenario_simple_vs_braindead
 from ai import CaptainBraindead, MajorDaft 
 
@@ -40,7 +40,7 @@ class Tournament:
         self.generals = generals_names
         self.scenarios = scenario_names
         self.rounds = rounds
-        # Stockage : results[Scenario][Gen1][Gen2] = {wins, losses, draws}
+       
         self.results = {} 
 
     def run(self):
@@ -68,16 +68,16 @@ class Tournament:
                     for i in range(self.rounds):
                         # Alternance des positions (Fair-play)
                         if i % 2 == 0:
-                            # Match Aller : 1 est A (Gauche), 2 est B (Droite)
+                            # Match Aller : 
                             res = run_headless_match(sc_func, ai_1, ai_2)
                             if res == "A": stats["wins"] += 1
                             elif res == "B": stats["losses"] += 1
                             else: stats["draws"] += 1
                         else:
-                            # Match Retour : 2 est A (Gauche), 1 est B (Droite)
+                            # Match Retour : 
                             res = run_headless_match(sc_func, ai_2, ai_1)
-                            if res == "A": stats["losses"] += 1 # A a gagné, mais A c'était l'ennemi
-                            elif res == "B": stats["wins"] += 1 # B a gagné, et B c'était nous
+                            if res == "A": stats["losses"] += 1 
+                            elif res == "B": stats["wins"] += 1
                             else: stats["draws"] += 1
                         
                         # Un petit point tous les 5 matchs pour montrer que ça bosse
@@ -213,14 +213,12 @@ class Tournament:
 if __name__ == "__main__":
     # --- CONFIGURATION DU LANCEMENT ---
     # Liste des participants
-    # (Doivent correspondre aux clés dans AVAILABLE_GENERALS)
     ai_participants = ["Braindead", "Daft"] 
-    # Ajoute "Smart" à la liste quand tu auras codé l'IA
+   
     
     scenarios = ["Scenario_Standard"]
     
     # 20 rounds = 10 allers + 10 retours pour chaque paire
-    # Tu peux augmenter ce nombre (ex: 50 ou 100) pour des stats plus fiables
     t = Tournament(ai_participants, scenarios, rounds=20)
     t.run()
 

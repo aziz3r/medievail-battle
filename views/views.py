@@ -39,13 +39,11 @@ class GUI:
             s.fill((34, 139, 34))
             self.assets['grass'] = s
 
-        # --- 2. TON CHEVALIER (KNIGHT) ---
+        # --- 2.CHEVALIER (KNIGHT) ---
         try:
-            # On charge ton image nettoyée
+            # On charge l'image nettoyée
             img_k = pygame.image.load("assets/knight.png").convert_alpha()
             
-            # PETITE SÉCURITÉ :
-            # Si tu as enlevé le fond mais que c'est resté blanc (pas transparent),
             # ceci va rendre le blanc transparent automatiquement.
             coin = img_k.get_at((0,0))
             if coin.a == 255: # Si le coin n'est pas déjà transparent
@@ -63,14 +61,11 @@ class GUI:
             self.assets['knight'] = s
 
         # --- 3. AUTRES UNITÉS (Pikeman, Crossbowman) ---
-        # On crée des jetons par défaut pour eux (sauf si tu as mis des images)
         for name, color in [("pikeman", (0, 150, 0)), ("crossbowman", (0, 100, 200))]:
             try:
-                # Essaie de charger l'image si elle existe
                 img = pygame.image.load(f"assets/{name}.png").convert_alpha()
                 self.assets[name] = pygame.transform.scale(img, (40, 40))
             except:
-                # Sinon on dessine un rond de couleur
                 s = pygame.Surface((30, 30), pygame.SRCALPHA)
                 pygame.draw.circle(s, color, (15, 15), 12)
                 self.assets[name] = s
@@ -134,16 +129,12 @@ class GUI:
             img = self.assets.get(u_type, self.assets.get('knight'))
             
             if img:
-                # --- ✨ CORRECTION DIRECTION ✨ ---
-                # Ton image knight.png regarde à GAUCHE par défaut.
                 
                 # Équipe A (Gauche) veut regarder à DROITE -> ON RETOURNE (Miroir)
                 if team == "A":
                     img = pygame.transform.flip(img, True, False)
                 
                 # Équipe B (Droite) veut regarder à GAUCHE -> ON LAISSE NORMAL
-                # (Puisque l'image regarde déjà à gauche)
-                # ----------------------------------
                 screen.blit(img, (screen_x, screen_y))
             
             # 4. Barre de vie (au-dessus)

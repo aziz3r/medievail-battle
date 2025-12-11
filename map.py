@@ -8,7 +8,7 @@ class BattleMap:
     La grille ne sert QUE pour l'affichage (approximation).
     """
 
-    def __init__(self, rows=20, cols=20):
+    def __init__(self, rows=120, cols=120):
         self.rows = rows
         self.cols = cols
 
