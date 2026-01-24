@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from typing import Dict, List, Optional, Iterable, Any
 
-from map import BattleMap
+from .map import BattleMap
 
 ATTACK_LOG_FILE = "battle_attacks.txt"
 
@@ -258,10 +258,16 @@ class Game:
         elev_tgt = self.map.get_elevation(target.x, target.y)
         elev_diff = elev_att - elev_tgt
 
-        # k_elev = 1.0 + 5% par niveau d'élévation (peut être ajusté)
-        k_elev = 1.0 + 0.05 * elev_diff
-        # On limite k_elev pour éviter des valeurs extrêmes
-        k_elev = max(0.5, min(2.0, k_elev))
+        # k_elev selon le PDF: valeurs discrètes {0.75, 1.0, 1.25}
+        # - 1.25 si attaquant en position supérieure (high ground advantage)
+        # - 1.00 si même niveau (terrain plat)
+        # - 0.75 si attaquant en position inférieure (low ground penalty)
+        if elev_diff > 0:
+            k_elev = 1.25  # Attaquant sur terrain élevé
+        elif elev_diff < 0:
+            k_elev = 0.75  # Attaquant sur terrain bas
+        else:
+            k_elev = 1.0   # Même niveau
 
         # HP avant attaque
         hp_before = float(getattr(target, "hp", 0.0))

@@ -1,6 +1,6 @@
 # pikeman.py
-from guerrier import Guerrier
-from knight import Knight
+from .guerrier import Guerrier
+from .knight import Knight
 
 class Pikeman(Guerrier):
     def __init__(self, x=0.0, y=0.0):

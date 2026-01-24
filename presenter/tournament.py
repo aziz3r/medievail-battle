@@ -3,9 +3,15 @@ from collections import defaultdict
 
 # --- IMPORTS ---
 
-from scenarios import scenario_simple_vs_braindead,scenario_small_terminal
-from ai import CaptainBraindead, MajorDaft, AssasinJack, PredictEinstein
-from smartAI import GeneralStrategus
+from model.scenarios import (
+    scenario_simple_vs_braindead,
+    scenario_small_terminal,
+    scenario_bataille_colline,
+    scenario_deux_camps_eleves,
+    scenario_siege_chateau,
+)
+from .ai import CaptainBraindead, MajorDaft, AssasinJack, PredictEinstein
+from .smartAI import GeneralStrategus
 
 # --- CONFIGURATION ---
 AVAILABLE_GENERALS = {
@@ -19,6 +25,9 @@ AVAILABLE_GENERALS = {
 AVAILABLE_SCENARIOS = {
     "Scenario_Standard": scenario_small_terminal,
     "Scenario_Dur": scenario_simple_vs_braindead,
+    "Bataille_Colline": scenario_bataille_colline,
+    "Deux_Camps": scenario_deux_camps_eleves,
+    "Siege_Chateau": scenario_siege_chateau,
 }
 
 # --- MOTEUR HEADLESS (Match Rapide) ---

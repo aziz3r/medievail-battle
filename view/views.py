@@ -110,10 +110,16 @@ class GUI:
         self.camera_x = 0
         self.camera_y = 0
         self.zoom = 1.0
-        self.min_zoom = 0.5
+        self.min_zoom = 0.1 # Allow zooming out much further
         self.max_zoom = 2.0
         
-        self.center_camera_on(10, 10)
+        # Center on map if available
+        if self.map:
+            rows = getattr(self.map, 'rows', 20)
+            cols = getattr(self.map, 'cols', 20)
+            self.center_camera_on(rows // 2, cols // 2)
+        else:
+            self.center_camera_on(10, 10)
         
         # --- SOLUTION DRAG & DROP ---
         self.is_dragging = False
@@ -139,20 +145,58 @@ class GUI:
         pygame.mouse.get_rel()
 
     def _load_assets(self):
-        # 1. Load Static Environment
+        # 1. Load Ground Tileset (ground_grasses.png)
+        self.grass_tiles = {'normal': [], 'high': [], 'low': []}
+
         try:
-            img = pygame.image.load("assets/grass.PNG").convert() # Note: .PNG extension case matched from files
-            img.set_colorkey(img.get_at((0,0)))
-            self.assets['grass'] = pygame.transform.scale(img, (TILE_WIDTH, TILE_HEIGHT))
-        except:
-            # Fallback try lowercase
+            tileset = pygame.image.load("assets/ground_grasses.png").convert_alpha()
+            ts_width, ts_height = tileset.get_size()
+
+            # The tileset is 1024x768. 
+            # User confirmed correct slicing is 128x64.
+            slice_w = 128
+            slice_h = 64
+            
+            cols = ts_width // slice_w
+            rows = ts_height // slice_h
+            
+            for row in range(2): # User requested only first 2 rows
+                for col in range(cols):
+                    rect = pygame.Rect(col * slice_w, row * slice_h, slice_w, slice_h)
+                    tile = tileset.subsurface(rect).copy()
+                    
+                    # Scale down to TILE_WIDTH/HEIGHT (64x32) for rendering
+                    scaled = pygame.transform.smoothscale(tile, (TILE_WIDTH, TILE_HEIGHT))
+                    
+                    # Add to ALL categories since user wants only these tiles used everywhere
+                    self.grass_tiles['normal'].append(scaled)
+                    self.grass_tiles['high'].append(scaled)
+                    self.grass_tiles['low'].append(scaled)
+
+            print(f"[TERRAIN] Tileset chargé: {len(self.grass_tiles)} tiles variées ({cols}×{rows})")
+
+            # Fallback pour compatibilité
+            if self.grass_tiles['normal']:
+                self.assets['grass'] = self.grass_tiles['normal'][0]
+
+        except Exception as e:
+            print(f"[TERRAIN] Erreur chargement tileset: {e}")
+            # Fallback: essayer l'ancienne méthode
             try:
-                img = pygame.image.load("assets/grass.png").convert() # Try lowercase
+                img = pygame.image.load("assets/grass.PNG").convert()
                 img.set_colorkey(img.get_at((0,0)))
-                self.assets['grass'] = pygame.transform.scale(img, (TILE_WIDTH, TILE_HEIGHT))
+                scaled = pygame.transform.scale(img, (TILE_WIDTH, TILE_HEIGHT))
+                self.assets['grass'] = scaled
+                self.grass_tiles['normal'] = [scaled]
+                self.grass_tiles['high'] = [scaled]
+                self.grass_tiles['low'] = [scaled]
             except:
-                s = pygame.Surface((TILE_WIDTH, TILE_HEIGHT)); s.fill((34, 139, 34))
+                s = pygame.Surface((TILE_WIDTH, TILE_HEIGHT))
+                s.fill((34, 139, 34))
                 self.assets['grass'] = s
+                self.grass_tiles['normal'] = [s]
+                self.grass_tiles['high'] = [s]
+                self.grass_tiles['low'] = [s]
 
         # 2. Load Unit Animations
         # Structure: assets/units/[UnitName]/[action]/[UnitName]_[action].webp
@@ -204,7 +248,8 @@ class GUI:
         pygame.mouse.set_visible(False)
 
     def get_scaled_tile_size(self):
-        return TILE_WIDTH * self.zoom, TILE_HEIGHT * self.zoom
+        # Force integer size to prevent rounding gaps (black lines) between tiles
+        return math.ceil(TILE_WIDTH * self.zoom), math.ceil(TILE_HEIGHT * self.zoom)
 
     def cart_to_iso(self, row, col):
         w, h = self.get_scaled_tile_size()
@@ -478,15 +523,39 @@ class GUI:
         screen.fill((20, 20, 20))
         tw, th = self.get_scaled_tile_size()
         
-        # Draw Map
+        # Draw Map avec tileset varié selon élévation
         if self.map:
             rows = getattr(self.map, 'rows', 20); cols = getattr(self.map, 'cols', 20)
-            scaled_grass = pygame.transform.scale(self.assets['grass'], (int(tw), int(th)))
+
             for row in range(rows):
                 for col in range(cols):
                     x, y = self.cart_to_iso(row, col); final_x = x + self.camera_x; final_y = y + self.camera_y
-                    if -tw < final_x < self.screen_w and -th < final_y < self.screen_h: 
-                        screen.blit(scaled_grass, (final_x, final_y))
+                    if -tw < final_x < self.screen_w and -th < final_y < self.screen_h:
+                        # Récupérer l'élévation de cette tile
+                        elev = self.map.get_elevation(row, col)
+
+                        # Sélectionner la tile appropriée selon l'élévation
+                        if elev > 0:
+                            tile_category = 'high'
+                        elif elev < 0:
+                            tile_category = 'low'
+                        else:
+                            tile_category = 'normal'
+
+                        # Ajouter de la variété : utiliser (row + col) comme seed pour sélection
+                        tile_list = self.grass_tiles.get(tile_category, [])
+                        if tile_list:
+                            tile_index = (row * 7 + col * 13) % len(tile_list)  # Pseudo-random mais déterministe
+                            tile_surf = tile_list[tile_index]
+                        else:
+                            # Fallback si pas de tileset
+                            tile_surf = self.assets.get('grass')
+
+                        # Redimensionner si nécessaire (pour le zoom)
+                        if tile_surf:
+                            if self.zoom != 1.0:
+                                tile_surf = pygame.transform.scale(tile_surf, (int(tw), int(th)))
+                            screen.blit(tile_surf, (final_x, final_y))
 
         # Draw ALL Units (Alive + Dead animating)
         # Note: game.alive_units() only gives living. We need self.game.units
@@ -514,9 +583,19 @@ class GUI:
                     img_w = int(frame.get_width() * self.zoom)
                     img_h = int(frame.get_height() * self.zoom)
                     scaled_img = pygame.transform.scale(frame, (img_w, img_h))
-                    
+
+                    # Calculer l'offset d'élévation pour effet de hauteur
+                    elev = self.map.get_elevation(u_x, u_y) if self.map else 0.0
+                    elevation_offset_y = 0
+                    if elev > 0:
+                        elevation_offset_y = -8 * self.zoom  # Élevé : 8 pixels vers le haut
+                    elif elev < 0:
+                        elevation_offset_y = 4 * self.zoom   # Bas : 4 pixels vers le bas
+                    # Si elev == 0, offset = 0 (terrain plat)
+
                     draw_x = screen_x + (tw // 2) - (img_w // 2)
-                    draw_y = screen_y + (th // 2) - int(img_h * 0.7)
+                    # FIX: Feet alignment calibrated by user to 0.50
+                    draw_y = screen_y + (th // 2) - int(img_h * 0.50) + elevation_offset_y
 
                     is_alive = getattr(unit, 'hp', 0) > 0
 
@@ -532,7 +611,8 @@ class GUI:
                         shadow_y = screen_y + (th // 2) - (ellipse_h // 4)
                         screen.blit(shadow_surf, (shadow_x, shadow_y))
                         
-                        pygame.draw.ellipse(screen, COLOR_TEAM_A if team == "A" else COLOR_TEAM_B, (screen_x + (tw//2) - ellipse_w//2, screen_y + (th//2) - ellipse_h//2, ellipse_w, ellipse_h), 1)
+                        # Fix: Align colored circle with shadow (same Y offset)
+                        pygame.draw.ellipse(screen, COLOR_TEAM_A if team == "A" else COLOR_TEAM_B, (screen_x + (tw//2) - ellipse_w//2, screen_y + (th//2) - ellipse_h//4, ellipse_w, ellipse_h), 1)
 
                     screen.blit(scaled_img, (draw_x, draw_y))
                     

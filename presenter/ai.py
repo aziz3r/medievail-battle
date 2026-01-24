@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import List, Any
 
-from game import Game
+from model.game import Game
 
 
 class BaseController:

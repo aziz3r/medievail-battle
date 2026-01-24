@@ -10,10 +10,17 @@ import sys
 import os
 import pickle
 
-from scenarios import scenario_simple_vs_braindead, scenario_small_terminal, scenario_lanchester
-from ai import CaptainBraindead, MajorDaft, AssasinJack, PredictEinstein
-from smartAI import GeneralStrategus
-from views.views import GUI
+from model.scenarios import (
+    scenario_simple_vs_braindead,
+    scenario_small_terminal,
+    scenario_lanchester,
+    scenario_bataille_colline,
+    scenario_deux_camps_eleves,
+    scenario_siege_chateau,
+)
+from presenter.ai import CaptainBraindead, MajorDaft, AssasinJack, PredictEinstein
+from presenter.smartAI import GeneralStrategus
+from .views import GUI
 
 # --- CONSTANTES ---
 SCREEN_WIDTH = 800
@@ -38,6 +45,9 @@ AVAILABLE_AIS = {
 AVAILABLE_SCENARIOS = {
     "Standard (Rapide)": scenario_small_terminal,
     "Grande Bataille": scenario_simple_vs_braindead,
+    "Bataille Colline": scenario_bataille_colline,
+    "Deux Camps Eleves": scenario_deux_camps_eleves,
+    "Siege du Chateau": scenario_siege_chateau,
 }
 
 AI_DESCRIPTIONS = {
@@ -511,6 +521,30 @@ class MainMenu:
         print(f"   Équipe A : {ai_a_name}")
         print(f"   Équipe B : {ai_b_name}\n")
 
+        # --- ECRAN DE CHARGEMENT ---
+        # On affiche "Chargement..." avant que la simulation ne bloque tout
+        self.screen.fill(BG_COLOR)
+        if self.bg_scaled:
+             self.screen.blit(self.bg_scaled, (0, 0))
+        
+        # Overlay sombre
+        overlay = pygame.Surface((self.w, self.h))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        cx, cy = self.w // 2, self.h // 2
+        loading_text = self.font_title.render("CHARGEMENT DE LA BATAILLE...", True, ACCENT_COLOR)
+        loading_rect = loading_text.get_rect(center=(cx, cy))
+        self.screen.blit(loading_text, loading_rect)
+
+        sub_text = self.font_small.render("Préparation des troupes et de l'IA...", True, (200, 200, 200))
+        sub_rect = sub_text.get_rect(center=(cx, cy + 50))
+        self.screen.blit(sub_text, sub_rect)
+
+        pygame.display.flip()
+        # ---------------------------
+
         # Créer le jeu
         scenario_func = AVAILABLE_SCENARIOS[scenario_name]
         game = scenario_func()
@@ -572,6 +606,14 @@ class MainMenu:
         print("[F11/F12]         : Save/Load rapide")
         print("[ESC]             : Retour menu")
         print("-----------------\n")
+
+        # Récupération de la vitesse choisie
+        # Options: ["Lent (10 FPS)", "Normal (30 FPS)", "Rapide (60 FPS)", "Très Rapide (120 FPS)"]
+        fps_values = [10, 30, 60, 120]
+        selected_index = self.opt_speed.selected_index
+        target_fps = fps_values[selected_index] if 0 <= selected_index < len(fps_values) else 30
+        
+        print(f"Simulation running at {target_fps} FPS")
 
         while battle_running:
             for event in pygame.event.get():
@@ -636,7 +678,8 @@ class MainMenu:
                 self.screen.blit(hint, hint_rect)
 
             pygame.display.flip()
-            clock.tick(60)
+            pygame.display.flip()
+            clock.tick(target_fps)
 
          # Fin de battle_window, on retourne au menu (qui est dans la boucle run)
         print("Retour au menu...")

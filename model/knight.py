@@ -1,5 +1,5 @@
 # knight.py
-from guerrier import Guerrier
+from .guerrier import Guerrier
 
 class Knight(Guerrier):
     def __init__(self, x=0.0, y=0.0):

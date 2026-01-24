@@ -1,7 +1,7 @@
 # crossbowman.py
 import random
-from guerrier import Guerrier
-from pikeman import Pikeman
+from .guerrier import Guerrier
+from .pikeman import Pikeman
 
 class Crossbowman(Guerrier):
     def __init__(self, x=0.0, y=0.0):
